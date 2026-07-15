@@ -1,17 +1,19 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Camera))]
 public class SimulatedYoloCamera : MonoBehaviour
 {
-    [Header("=== Настройки YOLO Камеры ===")]
-    [Tooltip("Ссылка на целевой мяч")]
-    public Transform targetBall;
+    [Header("=== Настройки YOLO Камеры (Характеристики железа) ===")]
+    [Tooltip("Тег объектов, которые камера должна распознавать (например, TargetBall)")]
+    public string targetTag = "TargetBall";
     
     [Tooltip("Максимальная дальность видимости (в метрах)")]
     public float maxVisionDistance = 2.0f;
     
     [Tooltip("Горизонтальный угол обзора (hFOV) в градусах")]
-    public float hFOV = 40f;
+    public float hFOV = 60f; // Укажите реальные данные объектива
+    
+    [Tooltip("Вертикальный угол обзора (vFOV) в градусах")]
+    public float vFOV = 40f; // Укажите реальные данные объектива
 
     [Header("=== Выходные данные (Для чтения ИИ) ===")]
     public bool isBallVisible = false;
@@ -22,12 +24,8 @@ public class SimulatedYoloCamera : MonoBehaviour
     [Tooltip("Нормализованная дистанция: 0 (вплотную) .. 1 (на границе maxVisionDistance)")]
     public float normalizedDistance = 1f;
 
-    private Camera cam;
-
-    void Start()
-    {
-        cam = GetComponent<Camera>();
-    }
+    // Переменная чисто для отрисовки луча в редакторе (Gizmos)
+    private Transform currentTrackedBall = null;
 
     void FixedUpdate()
     {
@@ -35,89 +33,93 @@ public class SimulatedYoloCamera : MonoBehaviour
     }
 
     /// <summary>
-    /// Математическая симуляция обнаружения мяча (YOLO)
+    /// Математическая симуляция прямоугольного FOV аппаратной камеры
     /// </summary>
     private void ProcessVision()
     {
-        // Базовая защита от отсутствия цели
-        if (targetBall == null)
-        {
-            ResetVisionState();
-            return;
-        }
-
         Vector3 camPos = transform.position;
-        Vector3 ballPos = targetBall.position;
-        Vector3 dirToBall = ballPos - camPos;
-        float actualDistance = dirToBall.magnitude;
+        Collider[] collidersInRange = Physics.OverlapSphere(camPos, maxVisionDistance);
+        
+        Transform bestTarget = null;
+        float minDistance = float.MaxValue;
+        float bestSignedHAngle = 0f; // Запомним угол лучшего мяча для расчета Offset
 
-        // 1. Проверка дистанции (мяч слишком далеко?)
-        if (actualDistance > maxVisionDistance)
+        foreach (Collider col in collidersInRange)
         {
-            ResetVisionState();
-            return;
-        }
-
-        // 2. Проверка угла обзора (Попал ли мяч в hFOV = 40°)
-        // Угол между направлением камеры (вперед) и направлением на мяч
-        float angleToBall = Vector3.Angle(transform.forward, dirToBall);
-        if (angleToBall > hFOV / 2f) // Делим на 2, так как конус расходится в обе стороны (±20°)
-        {
-            ResetVisionState();
-            return;
-        }
-
-        // 3. Проверка препятствий (Line-of-Sight через Raycast)
-        if (Physics.Raycast(camPos, dirToBall.normalized, out RaycastHit hit, maxVisionDistance))
-        {
-            // Если луч наткнулся на что-то, и это НЕ мяч — значит между ними стена
-            if (hit.transform != targetBall)
+            if (col.CompareTag(targetTag))
             {
-                ResetVisionState();
-                return;
+                Vector3 ballPos = col.transform.position;
+                Vector3 dirToBall = ballPos - camPos;
+                float actualDistance = dirToBall.magnitude;
+
+                // 1. Переводим позицию мяча в локальные координаты камеры
+                // Теперь Z - это расстояние прямо от объектива, X - вправо/влево, Y - вверх/вниз
+                Vector3 localPos = transform.InverseTransformPoint(ballPos);
+
+                // Если мяч сзади камеры (отрицательный Z), сразу отбрасываем
+                if (localPos.z <= 0f) continue;
+
+                // 2. Вычисляем углы отклонения от центра объектива
+                // Используем тригонометрию (Atan2) для получения угла по осям
+                float hAngleAbs = Mathf.Atan2(Mathf.Abs(localPos.x), localPos.z) * Mathf.Rad2Deg;
+                float vAngleAbs = Mathf.Atan2(Mathf.Abs(localPos.y), localPos.z) * Mathf.Rad2Deg;
+
+                // 3. Проверяем попадание в "прямоугольник" FOV
+                if (hAngleAbs > hFOV / 2f || vAngleAbs > vFOV / 2f)
+                {
+                    continue; // Мяч за пределами кадра по горизонтали или вертикали
+                }
+
+                // 4. Проверка препятствий (Line-of-Sight)
+                if (Physics.Raycast(camPos, dirToBall.normalized, out RaycastHit hit, maxVisionDistance))
+                {
+                    if (hit.collider == col)
+                    {
+                        if (actualDistance < minDistance)
+                        {
+                            minDistance = actualDistance;
+                            bestTarget = col.transform;
+                            // Вычисляем угол со знаком (влево -, вправо +) для нейросети
+                            bestSignedHAngle = Mathf.Atan2(localPos.x, localPos.z) * Mathf.Rad2Deg;
+                        }
+                    }
+                }
             }
+        }
+
+        // === РЕЗУЛЬТАТ ОБНАРУЖЕНИЯ ===
+        if (bestTarget != null)
+        {
+            isBallVisible = true;
+            normalizedDistance = minDistance / maxVisionDistance;
+
+            // Расчет горизонтального смещения от -1 до 1 напрямую из угла
+            // Если угол равен половине hFOV, получится 1 или -1.
+            horizontalOffset = bestSignedHAngle / (hFOV / 2f);
+            horizontalOffset = Mathf.Clamp(horizontalOffset, -1f, 1f);
+            
+            currentTrackedBall = bestTarget;
         }
         else
         {
-            // Луч прошел мимо всего (защита от багов физики)
             ResetVisionState();
-            return;
         }
-
-        // === МЯЧ УСПЕШНО ОБНАРУЖЕН ===
-        isBallVisible = true;
-
-        // Расчет нормализованной дистанции (0 до 1)
-        normalizedDistance = actualDistance / maxVisionDistance;
-
-        // Расчет 2D-координат на экране (Проекция)
-        Vector3 viewportPoint = cam.WorldToViewportPoint(ballPos);
-
-        // Viewport.x выдает от 0 (лево) до 1 (право). 
-        // Формула (x - 0.5) * 2 переводит это в диапазон [-1; 1], где 0 — идеальный центр.
-        horizontalOffset = (viewportPoint.x - 0.5f) * 2f;
-        horizontalOffset = Mathf.Clamp(horizontalOffset, -1f, 1f); // Защита от выхода за границы
     }
 
-    /// <summary>
-    /// Сброс значений, если мяч потерян из виду
-    /// </summary>
     private void ResetVisionState()
     {
         isBallVisible = false;
         horizontalOffset = 0f;
-        normalizedDistance = 1f; // 1 означает, что мяч максимально далеко / недоступен
+        normalizedDistance = 1f; 
+        currentTrackedBall = null;
     }
 
-    /// <summary>
-    /// Отрисовка луча камеры в редакторе для удобства отладки
-    /// </summary>
     void OnDrawGizmos()
     {
-        if (isBallVisible && targetBall != null)
+        if (isBallVisible && currentTrackedBall != null)
         {
             Gizmos.color = Color.green;
-            Gizmos.DrawLine(transform.position, targetBall.position);
+            Gizmos.DrawLine(transform.position, currentTrackedBall.position);
         }
     }
 }
