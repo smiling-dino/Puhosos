@@ -60,30 +60,39 @@ public class VirtualSensors : MonoBehaviour
         float angleStep = usRayCount > 1 ? usConeAngle / (usRayCount - 1) : 0f;
         float startAngle = -usConeAngle / 2f;
 
+        // --- ШАГ 1: ФИЗИКА (Находим общий минимум) ---
         for (int i = 0; i < usRayCount; i++)
         {
-            // Вычисляем направление луча с учетом поворота веера
             float currentAngle = startAngle + (angleStep * i);
             Quaternion rotation = Quaternion.AngleAxis(currentAngle, centerPoint.up);
             Vector3 direction = rotation * centerPoint.forward;
 
-            // Пускаем луч во все стороны
+            // Пускаем луч
             RaycastHit[] hits = Physics.RaycastAll(origin, direction, usMaxDistance);
             
-            // Ищем ближайший объект, который НЕ является мячом
+            // Ищем самый близкий объект (игнорируя мяч)
             foreach (var hit in hits)
             {
                 if (hit.collider.CompareTag(ballTag)) 
-                    continue; // Игнорируем мяч (он слишком мал для УЗ)
+                    continue; // Игнорируем мяч
 
                 if (hit.distance < minDistance)
                 {
                     minDistance = hit.distance;
                 }
             }
+        }
 
-            // Отрисовка лучей в Scene View для дебага
-            Color rayColor = minDistance < usMaxDistance ? Color.red : Color.cyan;
+        // --- ШАГ 2: ВИЗУАЛИЗАЦИЯ (Отрисовываем ВСЕ лучи с учетом найденного минимума) ---
+        Color rayColor = minDistance < usMaxDistance ? Color.red : Color.cyan;
+
+        for (int i = 0; i < usRayCount; i++)
+        {
+            float currentAngle = startAngle + (angleStep * i);
+            Quaternion rotation = Quaternion.AngleAxis(currentAngle, centerPoint.up);
+            Vector3 direction = rotation * centerPoint.forward;
+
+            // Теперь все лучи гарантированно рисуются одинаковой минимальной длины!
             Debug.DrawRay(origin, direction * minDistance, rayColor);
         }
 
