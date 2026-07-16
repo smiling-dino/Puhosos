@@ -13,6 +13,9 @@ public class SimulatedYoloCamera : MonoBehaviour
 
     private Camera cam;
 
+    public float MaxDetectionDistance => maxDetectionDistance;
+    public float HorizontalFov => horizontalFov;
+
     void Awake()
     {
         cam = GetComponent<Camera>();
@@ -74,5 +77,11 @@ public class SimulatedYoloCamera : MonoBehaviour
     public Transform GetBallTransform()
     {
         return targetBall;
+    }
+
+    public void SetDetectionProfile(float detectionDistance, float fov)
+    {
+        maxDetectionDistance = Mathf.Max(0.1f, detectionDistance);
+        horizontalFov = Mathf.Clamp(fov, 10f, 120f);
     }
 }

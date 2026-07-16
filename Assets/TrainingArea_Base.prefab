@@ -1968,7 +1968,7 @@ MonoBehaviour:
   usRayCount: 5
   usConeAngle: 30
   ballTag: TargetBall
-  irObstacleDistance: 3
+  irObstacleDistance: 0.15
   irGripperDistance: 0.1
   ultrasoundValue: 1
   centerIRObstacle: 0

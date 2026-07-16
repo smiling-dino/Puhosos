@@ -29,6 +29,8 @@ public class ArenaController : MonoBehaviour
     public float targetSpawnY = 0.1f; //[cite: 1]
 
     private List<GameObject> spawnedObstacles = new List<GameObject>();
+
+    public IReadOnlyList<GameObject> SpawnedObstacles => spawnedObstacles;
     
     // Внутренние динамические границы арены
     private float minX, maxX;

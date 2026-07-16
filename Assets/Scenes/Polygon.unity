@@ -625,7 +625,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.Areas.TrainingAreaReplicator
   baseArea: {fileID: 1611562722}
-  numAreas: 5
+  numAreas: 20
   separation: 10
   buildOnly: 0
 --- !u!4 &1783778937
