@@ -11,6 +11,28 @@ public class GripperController : MonoBehaviour
     private Rigidbody ballRigidbody;
     private Collider ballCollider;
 
+    [ContextMenu("ТЕСТ: Захватить Мяч")]
+    public void TestGrab()
+    {
+        // Ищем мяч на сцене по тегу
+        GameObject ball = GameObject.FindWithTag("TargetBall");
+        if (ball != null)
+        {
+            GrabBall(ball);
+        }
+        else
+        {
+            Debug.LogError("Тестовый мяч с тегом 'TargetBall' не найден на сцене!");
+        }
+    }
+
+    [ContextMenu("ТЕСТ: Отпустить Мяч")]
+    public void TestRelease()
+    {
+        ReleaseBall();
+    }
+
+
     /// <summary>
     /// Метод захвата мяча (Логическое удержание)
     /// </summary>

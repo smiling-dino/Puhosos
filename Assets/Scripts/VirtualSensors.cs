@@ -14,9 +14,11 @@ public class VirtualSensors : MonoBehaviour
     [Tooltip("ИК датчик внутри клешни")]
     public Transform gripperIRPoint;
 
+
+    
     [Header("=== Настройки Ультразвука ===")]
     [Tooltip("Максимальная дистанция УЗ датчика (метров)")]
-    public float usMaxDistance = 2.0f;
+    public float usMaxDistance = 3.0f;
     [Tooltip("Количество лучей в конусе обзора")]
     public int usRayCount = 5;
     [Tooltip("Угол конуса обзора в градусах")]

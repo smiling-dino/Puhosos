@@ -12,6 +12,14 @@ public class RobotAgent : Agent
     public GripperController gripperController; //[cite: 16]
     public VirtualSensors virtualSensors; //[cite: 15]
     public SimulatedYoloCamera yoloCamera; //[cite: 12]
+    
+    [Header("=== Настройки обучения (Спавн) ===")]
+    [Tooltip("Границы случайного спавна по X (от центра арены)")]
+    public float spawnAreaWidth = 4f; 
+    [Tooltip("Границы случайного спавна по Z (от центра арены)")]
+    public float spawnAreaLength = 4f;
+    [Tooltip("Высота спавна мяча, чтобы он не провалился под пол")]
+    public float ballSpawnHeight = 0.5f;
 
     private Rigidbody rb;
     private GameObject targetBall;
@@ -77,6 +85,28 @@ public class RobotAgent : Agent
         {
             previousDistanceToBall = Vector3.Distance(transform.position, targetBall.transform.position);
         }
+
+        if (targetBall != null)
+        {
+            // 1. Генерируем случайные координаты в заданных пределах
+            float randomX = Random.Range(-spawnAreaWidth, spawnAreaWidth);
+            float randomZ = Random.Range(-spawnAreaLength, spawnAreaLength);
+
+            // 2. Перемещаем мяч ОТНОСИТЕЛЬНО арены (localPosition)
+            targetBall.transform.localPosition = new Vector3(randomX, ballSpawnHeight, randomZ);
+
+            // 3. Обязательно гасим инерцию мяча! 
+            // Иначе он сохранит скорость с прошлого эпизода и улетит.
+            Rigidbody ballRb = targetBall.GetComponent<Rigidbody>();
+            if (ballRb != null)
+            {
+                ballRb.linearVelocity = Vector3.zero;
+                ballRb.angularVelocity = Vector3.zero;
+            }
+
+            // Обновляем стартовую дистанцию для расчета наград
+            previousDistanceToBall = Vector3.Distance(transform.position, targetBall.transform.position);
+        }
     }
 
     /// <summary>
@@ -132,7 +162,7 @@ public class RobotAgent : Agent
         sensor.AddObservation(offset.z);
 
         // 13. Нормализованный угол направления взгляда робота (Heading)
-        sensor.AddObservation(transform.eulerAngles.y / 360f);
+        sensor.AddObservation(transform.localEulerAngles.y / 360f);
 
         // 14. Текущая скорость движения
         sensor.AddObservation(rb.linearVelocity.magnitude);
