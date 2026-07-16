@@ -119,6 +119,234 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1001 &226999247
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (23)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &360589960
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (21)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &460075597
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (4)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &465287838
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (15)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
 --- !u!1 &530237175
 GameObject:
   m_ObjectHideFlags: 0
@@ -289,6 +517,690 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &578615107
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (17)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &842533734
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (13)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &902612617
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (12)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &983393411
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (10)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &984625529
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (11)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1000714314
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 70
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (29)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1115582143
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (9)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1170267316
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (27)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1177726823
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (18)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1218539568
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (1)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1250227423
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (8)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1323432923
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (24)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
 --- !u!850595691 &1354181355
 LightingSettings:
   m_ObjectHideFlags: 0
@@ -356,6 +1268,120 @@ LightingSettings:
   m_PVRFilteringAtrousPositionSigmaIndirect: 2
   m_PVRFilteringAtrousPositionSigmaAO: 1
   m_RespectSceneVisibilityWhenBakingGI: 0
+--- !u!1001 &1417684191
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (20)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1548732119
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (22)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
 --- !u!1 &1598273109
 GameObject:
   m_ObjectHideFlags: 0
@@ -443,7 +1469,7 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
-    TrackingTarget: {fileID: 543450653046568785}
+    TrackingTarget: {fileID: 8640230428542235244}
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
@@ -481,6 +1507,234 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1618375793
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (6)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1670026416
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 70
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (31)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1684649027
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (19)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1722186039
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (14)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
 --- !u!1 &1746325439
 GameObject:
   m_ObjectHideFlags: 0
@@ -560,12 +1814,7 @@ MonoBehaviour:
   m_PointerBehavior: 0
   m_CursorLockBehavior: 0
   m_ScrollDeltaPerTick: 6
---- !u!4 &543450653046568785 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4179964853393763044, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
-  m_PrefabInstance: {fileID: 5614427603753556104}
-  m_PrefabAsset: {fileID: 0}
---- !u!1001 &5614427603753556104
+--- !u!1001 &1765150626
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -573,59 +1822,573 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 912217548212838736, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
-      propertyPath: m_Name
-      value: TrainingArena
-      objectReference: {fileID: 0}
-    - target: {fileID: 2660610178634886247, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8741419459796230550, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 20
       objectReference: {fileID: 0}
-    - target: {fileID: 8741419459796230550, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
       propertyPath: m_LocalPosition.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8741419459796230550, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: 10
       objectReference: {fileID: 0}
-    - target: {fileID: 8741419459796230550, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 8741419459796230550, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
       propertyPath: m_LocalRotation.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8741419459796230550, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
       propertyPath: m_LocalRotation.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8741419459796230550, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8741419459796230550, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8741419459796230550, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8741419459796230550, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (5)
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1844944349
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (26)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1918433627
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 70
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (28)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1936420487
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 70
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (30)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &1955668000
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (3)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &2005899535
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (16)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &2029346085
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (7)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &2038342416
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (2)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &2068207561
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena (25)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!1001 &3709110318152920195
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4900861151748144887, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6291796894721207534, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Name
+      value: TrainingArena
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+--- !u!4 &8640230428542235244 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7520656175454111711, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+  m_PrefabInstance: {fileID: 3709110318152920195}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -633,4 +2396,35 @@ SceneRoots:
   - {fileID: 530237180}
   - {fileID: 1746325442}
   - {fileID: 1598273113}
-  - {fileID: 5614427603753556104}
+  - {fileID: 3709110318152920195}
+  - {fileID: 2005899535}
+  - {fileID: 1250227423}
+  - {fileID: 578615107}
+  - {fileID: 460075597}
+  - {fileID: 1177726823}
+  - {fileID: 1115582143}
+  - {fileID: 1684649027}
+  - {fileID: 2038342416}
+  - {fileID: 1417684191}
+  - {fileID: 983393411}
+  - {fileID: 360589960}
+  - {fileID: 1765150626}
+  - {fileID: 1548732119}
+  - {fileID: 984625529}
+  - {fileID: 226999247}
+  - {fileID: 1218539568}
+  - {fileID: 1323432923}
+  - {fileID: 902612617}
+  - {fileID: 2068207561}
+  - {fileID: 1618375793}
+  - {fileID: 1844944349}
+  - {fileID: 842533734}
+  - {fileID: 1170267316}
+  - {fileID: 1955668000}
+  - {fileID: 1918433627}
+  - {fileID: 1722186039}
+  - {fileID: 1000714314}
+  - {fileID: 2029346085}
+  - {fileID: 1936420487}
+  - {fileID: 465287838}
+  - {fileID: 1670026416}
