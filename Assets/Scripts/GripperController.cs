@@ -3,67 +3,86 @@ using UnityEngine;
 public class GripperController : MonoBehaviour
 {
     [Header("=== Настройки захвата ===")]
-    [Tooltip("Точка между губками клешни, куда будет 'прилипать' мяч")]
+    [Tooltip("Точка между губками клешни")]
     public Transform holdPoint;
-    
-    // Ссылки на текущий захваченный мяч и его компоненты
+
     private GameObject heldBall;
     private Rigidbody ballRigidbody;
     private Collider ballCollider;
 
-    /// <summary>
-    /// Метод захвата мяча (Логическое удержание)
-    /// </summary>
+    // Родитель мяча до захвата — TrainingArea конкретного агента
+    private Transform originalBallParent;
+
     public void GrabBall(GameObject ball)
     {
-        if (heldBall != null) return; // Защита: мы уже что-то держим
+        if (heldBall != null || ball == null)
+        {
+            return;
+        }
+
+        if (holdPoint == null)
+        {
+            Debug.LogError("HoldPoint не назначен в GripperController", this);
+            return;
+        }
 
         heldBall = ball;
         ballRigidbody = heldBall.GetComponent<Rigidbody>();
         ballCollider = heldBall.GetComponent<Collider>();
 
-        if (ballRigidbody != null && ballCollider != null)
+        // Запоминаем арену, которой принадлежит мяч
+        originalBallParent = heldBall.transform.parent;
+
+        if (ballRigidbody != null)
         {
-            // 1. Отключаем физику (мяч перестает падать и реагировать на силы)
+            ballRigidbody.linearVelocity = Vector3.zero;
+            ballRigidbody.angularVelocity = Vector3.zero;
             ballRigidbody.isKinematic = true;
-            
-            // 2. Отключаем коллизии (чтобы мяч не конфликтовал с коллайдерами клешни)
-            ballCollider.enabled = false;
-            
-            // 3. Делаем мяч дочерним объектом нашей невидимой точки
-            heldBall.transform.SetParent(holdPoint);
-            
-            // 4. Мгновенно центрируем мяч ровно между губками (по координатам HoldPoint)
-            heldBall.transform.localPosition = Vector3.zero;
         }
+
+        if (ballCollider != null)
+        {
+            ballCollider.enabled = false;
+        }
+
+        // Прикрепляем мяч к клешне
+        heldBall.transform.SetParent(holdPoint, false);
+        heldBall.transform.localPosition = Vector3.zero;
+        heldBall.transform.localRotation = Quaternion.identity;
     }
 
-    /// <summary>
-    /// Метод разжатия клешни и освобождения мяча
-    /// </summary>
     public void ReleaseBall()
     {
-        if (heldBall == null) return; // Защита: клешня пуста, отпускать нечего
-
-        if (ballRigidbody != null && ballCollider != null)
+        if (heldBall == null)
         {
-            // 1. Отвязываем мяч от клешни (выкидываем его в корень сцены)
-            heldBall.transform.SetParent(null);
-            
-            // 2. Включаем коллайдер обратно
-            ballCollider.enabled = true;
-            
-            // 3. Выключаем кинематику, возвращая мячу гравитацию и физику
-            ballRigidbody.isKinematic = false;
+            return;
         }
 
-        // Очищаем переменные, чтобы клешня снова была готова к работе
+        // Возвращаем мяч обратно в его TrainingArea
+        Transform targetParent = originalBallParent != null
+            ? originalBallParent
+            : transform.parent;
+
+        heldBall.transform.SetParent(targetParent, true);
+
+        if (ballCollider != null)
+        {
+            ballCollider.enabled = true;
+        }
+
+        if (ballRigidbody != null)
+        {
+            ballRigidbody.isKinematic = false;
+            ballRigidbody.linearVelocity = Vector3.zero;
+            ballRigidbody.angularVelocity = Vector3.zero;
+        }
+
         heldBall = null;
         ballRigidbody = null;
         ballCollider = null;
+        originalBallParent = null;
     }
-    
-    // (Опционально) Метод-проверка, держит ли сейчас клешня мяч
+
     public bool IsHoldingBall()
     {
         return heldBall != null;

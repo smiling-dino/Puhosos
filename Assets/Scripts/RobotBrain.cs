@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(TrackController))]
 public class RobotBrain : Agent
@@ -40,29 +41,35 @@ public class RobotBrain : Agent
 
     public override void OnEpisodeBegin()
     {
-        // Сброс физики и скоростей робота
+        trackController.ResetMotors();
+
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
-        
-        // Возвращаем робота в его локальную стартовую точку
-        transform.localPosition = startLocalPosition;
-        transform.localRotation = Quaternion.identity;
 
-        // Сброс клешни
         if (gripperController != null)
         {
             gripperController.ReleaseBall();
         }
-        hasBall = false;
-        
-        timeSinceLastDetection = 0f;
-        previousDistanceToBall = GetDistanceToBall();
 
-        // Сброс арены и генерация новых препятствий
-        if (arenaController != null)
+        hasBall = false;
+        lastKnownBallDirection = 0f;
+        timeSinceLastDetection = 0f;
+        lastGasAction = 0f;
+        lastSteerAction = 0f;
+
+        if (arenaController == null)
         {
-            arenaController.ResetArena();
+            Debug.LogError("ArenaController не назначен", this);
+            return;
         }
+
+        arenaController.ResetArena();
+
+        transform.localRotation = Quaternion.identity;
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        previousDistanceToBall = GetDistanceToBall();
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -196,10 +203,25 @@ public class RobotBrain : Agent
         }
 
         // Проверка падения или опрокидывания
-        if (transform.localPosition.y < -1f || Mathf.Abs(transform.localRotation.eulerAngles.x) > 45f || Mathf.Abs(transform.localRotation.eulerAngles.z) > 45f)
+        float tiltX = Mathf.Abs(
+            Mathf.DeltaAngle(0f, transform.localEulerAngles.x)
+        );
+
+        float tiltZ = Mathf.Abs(
+            Mathf.DeltaAngle(0f, transform.localEulerAngles.z)
+        );
+
+        if (transform.localPosition.y < -1f || tiltX > 45f || tiltZ > 45f)
         {
-            SetReward(-1.0f);
+            SetReward(-1f);
             EndEpisode();
+            return;
+        }
+        if (hasBall)
+        {
+            AddReward(5f);
+            EndEpisode();
+            return;
         }
     }
 
@@ -212,19 +234,38 @@ public class RobotBrain : Agent
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
-        ActionSegment<float> continuousActions = actionsOut.ContinuousActions;
-        ActionSegment<int> discreteActions = actionsOut.DiscreteActions;
+        ActionSegment<float> continuous = actionsOut.ContinuousActions;
+        ActionSegment<int> discrete = actionsOut.DiscreteActions;
 
-        continuousActions[0] = Input.GetAxisRaw("Vertical");
-        continuousActions[1] = Input.GetAxisRaw("Horizontal");
+        continuous[0] = 0f;
+        continuous[1] = 0f;
+        continuous[2] = 0f;
+        discrete[0] = 0;
 
-        float camTurnInput = 0f;
-        if (Input.GetKey(KeyCode.Q)) camTurnInput = -1f;
-        if (Input.GetKey(KeyCode.E)) camTurnInput = 1f;
-        continuousActions[2] = camTurnInput;
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard == null)
+        {
+            return;
+        }
 
-        discreteActions[0] = 0;
-        if (Input.GetKey(KeyCode.Space)) discreteActions[0] = 1;
-        if (Input.GetKey(KeyCode.LeftShift)) discreteActions[0] = 2;
+        if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed)
+            continuous[0] = 1f;
+        else if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed)
+            continuous[0] = -1f;
+
+        if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed)
+            continuous[1] = 1f;
+        else if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed)
+            continuous[1] = -1f;
+
+        if (keyboard.eKey.isPressed)
+            continuous[2] = 1f;
+        else if (keyboard.qKey.isPressed)
+            continuous[2] = -1f;
+
+        if (keyboard.spaceKey.isPressed)
+            discrete[0] = 1;
+        else if (keyboard.leftShiftKey.isPressed)
+            discrete[0] = 2;
     }
 }

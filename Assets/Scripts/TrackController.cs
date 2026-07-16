@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
 public class TrackController : MonoBehaviour
@@ -85,26 +84,12 @@ public class TrackController : MonoBehaviour
         rb.MoveRotation(rb.rotation * turnRotation);
     }
 
-    void Update()
+    public void ResetMotors()
     {
-        float gas = 0f;
-        float steer = 0f;
-
-        if (Keyboard.current != null)
-        {
-            var keyboard = Keyboard.current;
-
-            // Газ (W / S или Стрелки)
-            if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) gas = 1f;
-            else if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) gas = -1f;
-
-            // Поворот (A / D или Стрелки)
-            if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) steer = 1f;
-            else if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed) steer = -1f;
-        }
-        
-        SetInputs(gas, steer);
+        currentLeftPwm = 0f;
+        currentRightPwm = 0f;
     }
+
 
     // Отрисовка зеленой стрелочки направления в окне сцены при выделении робота
     void OnDrawGizmosSelected()
