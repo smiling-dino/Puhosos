@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.MLAgents;
 
 public class ArenaController : MonoBehaviour
 {
@@ -23,6 +24,8 @@ public class ArenaController : MonoBehaviour
 
     [Header("Strict Camera Target Spawn")]
     public bool spawnTargetInsideInitialCameraView = true;
+    [Range(0f, 1f)] public float defaultInitialVisibleTargetProbability = 0.2f;
+    public string initialVisibleTargetProbabilityParameter = "initial_target_visible_probability";
     public Transform cameraTransform;
     public float targetVisibleMinDistance = 1.55f;
     public float targetVisibleMaxDistance = 1.85f;
@@ -44,6 +47,7 @@ public class ArenaController : MonoBehaviour
     public int LastObstacleFallbackSpawns { get; private set; }
     public int LastTargetFallbackSpawns { get; private set; }
     public int LastVisibleTargetFallbackSpawns { get; private set; }
+    public bool LastTargetRequestedVisible { get; private set; }
 
     public void ResetArena()
     {
@@ -123,6 +127,7 @@ public class ArenaController : MonoBehaviour
         LastObstacleFallbackSpawns = 0;
         LastTargetFallbackSpawns = 0;
         LastVisibleTargetFallbackSpawns = 0;
+        LastTargetRequestedVisible = false;
     }
 
     private Vector3 GetValidRobotPosition(float localY)
@@ -168,12 +173,15 @@ public class ArenaController : MonoBehaviour
 
         float targetRadius = GetHorizontalRadius(targetTransform);
 
-        if (spawnTargetInsideInitialCameraView && TryMoveTargetIntoInitialCameraView(targetRadius))
+        bool requestVisibleSpawn = ShouldRequestVisibleTargetSpawn();
+        LastTargetRequestedVisible = requestVisibleSpawn;
+
+        if (requestVisibleSpawn && TryMoveTargetIntoInitialCameraView(targetRadius))
         {
             return;
         }
 
-        if (spawnTargetInsideInitialCameraView)
+        if (requestVisibleSpawn)
         {
             LastVisibleTargetFallbackSpawns++;
         }
@@ -202,6 +210,27 @@ public class ArenaController : MonoBehaviour
 
         LastTargetFallbackSpawns++;
         targetTransform.localPosition = bestPosition;
+    }
+
+    private bool ShouldRequestVisibleTargetSpawn()
+    {
+        if (!spawnTargetInsideInitialCameraView)
+        {
+            return false;
+        }
+
+        float visibleProbability = Mathf.Clamp01(defaultInitialVisibleTargetProbability);
+        if (Academy.IsInitialized && !string.IsNullOrWhiteSpace(initialVisibleTargetProbabilityParameter))
+        {
+            visibleProbability = Mathf.Clamp01(
+                Academy.Instance.EnvironmentParameters.GetWithDefault(
+                    initialVisibleTargetProbabilityParameter,
+                    visibleProbability
+                )
+            );
+        }
+
+        return Random.value < visibleProbability;
     }
 
     private bool TryMoveTargetIntoInitialCameraView(float targetRadius)

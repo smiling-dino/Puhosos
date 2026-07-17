@@ -5,7 +5,8 @@ public class SimulatedYoloCamera : MonoBehaviour
 {
     [Header("Target Settings")]
     [SerializeField] private Transform targetBall;          // Ссылка на объект мяча
-    [SerializeField] private LayerMask obstacleLayers;      // Слои препятствий (стены, коробки)
+    [SerializeField] private Transform robotRoot;           // Корень робота для исключения собственных коллайдеров
+    [SerializeField] private LayerMask obstacleLayers = ~0; // Слои препятствий (стены, коробки)
 
     [Header("Camera Specs")]
     [SerializeField] private float maxDetectionDistance = 2.0f; // Дальность видимости камеры
@@ -19,6 +20,12 @@ public class SimulatedYoloCamera : MonoBehaviour
     void Awake()
     {
         cam = GetComponent<Camera>();
+
+        if (robotRoot == null)
+        {
+            TrackController controller = GetComponentInParent<TrackController>();
+            robotRoot = controller != null ? controller.transform : transform.parent;
+        }
     }
 
     /// <summary>
@@ -40,15 +47,23 @@ public class SimulatedYoloCamera : MonoBehaviour
         if (float.IsNaN(angle) || float.IsInfinity(angle)) return false;
         if (angle > (horizontalFov / 2f)) return false;
 
-        // 3. Проверка преград (Raycast)
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position, directionToBall, out hit, distance, obstacleLayers))
+        // 3. Проверка преград. Собственные коллайдеры робота и сам мяч не считаются препятствиями.
+        RaycastHit[] hits = Physics.RaycastAll(
+            transform.position,
+            directionToBall,
+            distance,
+            obstacleLayers,
+            QueryTriggerInteraction.Ignore
+        );
+
+        foreach (RaycastHit hit in hits)
         {
-            // Если луч попал во что-то, что не является мячом (или его родителем), видимость перекрыта
-            if (hit.transform != targetBall && !hit.transform.IsChildOf(targetBall))
+            if (IsRobotCollider(hit.collider) || IsTargetCollider(hit.transform))
             {
-                return false;
+                continue;
             }
+
+            return false;
         }
 
         return true;
@@ -120,6 +135,20 @@ public class SimulatedYoloCamera : MonoBehaviour
         return !float.IsNaN(value.x) && !float.IsInfinity(value.x)
             && !float.IsNaN(value.y) && !float.IsInfinity(value.y)
             && !float.IsNaN(value.z) && !float.IsInfinity(value.z);
+    }
+
+    private bool IsRobotCollider(Collider candidate)
+    {
+        return candidate != null
+            && robotRoot != null
+            && (candidate.transform == robotRoot || candidate.transform.IsChildOf(robotRoot));
+    }
+
+    private bool IsTargetCollider(Transform candidate)
+    {
+        return candidate != null
+            && targetBall != null
+            && (candidate == targetBall || candidate.IsChildOf(targetBall));
     }
 
     public void SetDetectionProfile(float detectionDistance, float fov)

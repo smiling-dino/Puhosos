@@ -918,6 +918,7 @@ public class RobotBrain : Agent
         Academy.Instance.StatsRecorder.Add("GFSX/SpawnObstacleFallbacks", arenaController.LastObstacleFallbackSpawns);
         Academy.Instance.StatsRecorder.Add("GFSX/SpawnTargetFallbacks", arenaController.LastTargetFallbackSpawns);
         Academy.Instance.StatsRecorder.Add("GFSX/SpawnVisibleTargetFallbacks", arenaController.LastVisibleTargetFallbackSpawns);
+        Academy.Instance.StatsRecorder.Add("GFSX/SpawnRequestedVisibleTarget", arenaController.LastTargetRequestedVisible ? 1f : 0f);
 
         float initialCameraDistanceToBall = yoloCamera != null ? yoloCamera.GetDistanceToBall() : initialDistanceToBall;
         Academy.Instance.StatsRecorder.Add("GFSX/SpawnInitialDistanceToBall", initialDistanceToBall);

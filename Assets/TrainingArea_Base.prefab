@@ -61,6 +61,14 @@ MonoBehaviour:
   obstacleSpawnY: 0
   robotSpawnY: 0.05
   targetSpawnY: 0.1
+  spawnTargetInsideInitialCameraView: 1
+  defaultInitialVisibleTargetProbability: 0.2
+  initialVisibleTargetProbabilityParameter: initial_target_visible_probability
+  cameraTransform: {fileID: 1736409401524606349}
+  targetVisibleMinDistance: 1.55
+  targetVisibleMaxDistance: 1.85
+  targetVisibleHorizontalFov: 40
+  targetVisibleAnglePadding: 2
 --- !u!1 &1610754090654904192
 GameObject:
   m_ObjectHideFlags: 0
@@ -1186,9 +1194,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SimulatedYoloCamera
   targetBall: {fileID: 8118221399646328481}
+  robotRoot: {fileID: 7105162563793981822}
   obstacleLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 4294967295
   maxDetectionDistance: 2
   horizontalFov: 40
 --- !u!1 &4845123664573871081

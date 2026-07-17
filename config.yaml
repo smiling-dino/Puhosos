@@ -1,6 +1,39 @@
 env_settings:
   num_areas: 20
 
+environment_parameters:
+  initial_target_visible_probability:
+    curriculum:
+      - name: grasp_and_lift
+        completion_criteria:
+          measure: progress
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 100
+          threshold: 0.20
+          require_reset: true
+        value: 1.0
+      - name: guided_search
+        completion_criteria:
+          measure: progress
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 100
+          threshold: 0.45
+          require_reset: true
+        value: 0.7
+      - name: mixed_search
+        completion_criteria:
+          measure: progress
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 100
+          threshold: 0.70
+          require_reset: true
+        value: 0.4
+      - name: final_search
+        value: 0.2
+
 behaviors:
   GFSX_Brain:
     trainer_type: ppo
