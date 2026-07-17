@@ -1,0 +1,29 @@
+{
+    "GFSX_Brain": {
+        "checkpoints": [
+            {
+                "steps": 15177,
+                "file_path": "results\\gfsx_lecture_rewards_001\\GFSX_Brain\\GFSX_Brain-15177.onnx",
+                "reward": 12.918927152951559,
+                "creation_time": 1784269106.989128,
+                "auxillary_file_paths": [
+                    "results\\gfsx_lecture_rewards_001\\GFSX_Brain\\GFSX_Brain-15177.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 15177,
+            "file_path": "results\\gfsx_lecture_rewards_001\\GFSX_Brain.onnx",
+            "reward": 12.918927152951559,
+            "creation_time": 1784269106.989128,
+            "auxillary_file_paths": [
+                "results\\gfsx_lecture_rewards_001\\GFSX_Brain\\GFSX_Brain-15177.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.2.2+cpu"
+    }
+}

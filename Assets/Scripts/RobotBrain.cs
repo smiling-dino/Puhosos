@@ -22,16 +22,14 @@ public class RobotBrain : Agent
     [SerializeField] private bool hasBall = false;
     [SerializeField] private Transform gripperLeftClaw;
     [SerializeField] private Transform gripperRightClaw;
-    [SerializeField] private float gripperCaptureRadius = 0.22f;
-    [SerializeField] private bool autoCaptureOnContact = true;
-    [SerializeField] private bool gripperClosed = false;
+    [SerializeField] private float gripperCaptureRadius = 0.08f;
 
     [Header("Training Robustness")]
     [SerializeField] private bool enableDomainRandomization = true;
     [SerializeField] private int requiredHoldSteps = 50;
-    [SerializeField] private float holdStepReward = 0.03f;
-    [SerializeField] private float terminalSuccessReward = 8.0f;
-    [SerializeField] private float lostBallPenalty = -2.0f;
+    [SerializeField] private float holdStepReward = 0.02f;
+    [SerializeField] private float terminalSuccessReward = 5.0f;
+    [SerializeField] private float lostBallPenalty = -3.0f;
     [SerializeField] private float maxBallDistanceForEpisode = 20f;
     [SerializeField] private float maxBallDropBelowArena = 1.0f;
 
@@ -82,7 +80,19 @@ public class RobotBrain : Agent
     private int currentActionLatency = 0;
     private readonly Queue<Vector3> actionBuffer = new Queue<Vector3>();
 
+    private const float LectureDistanceDeltaClamp = 0.05f;
+    private const float LectureFarApproachScale = 0.025f;
+    private const float LectureNearApproachScale = 0.05f;
+    private const float LectureActionRatePenaltyScale = 0.002f;
+    private const float LectureCenteringRewardScale = 0.001f;
+    private const float LectureWallDistanceThreshold = 0.25f;
+    private const float LectureWallPenalty = 0.01f;
+    private const float LectureTerminalFailurePenalty = -3.0f;
+    private const float LectureMaxEpisodeReward = 5.0f;
+    private const int LectureRewardDecisionPeriod = 5;
+
     private bool defaultsCaptured = false;
+    private float lectureEpisodeReward = 0f;
     private float defaultRobotMass;
     private float defaultMoveSpeed;
     private float defaultTurnSpeed;
@@ -136,7 +146,6 @@ public class RobotBrain : Agent
     {
         PublishRosTelemetryIfNeeded();
         HandleManualGripperInput();
-        TryAutoCaptureBall();
     }
 
     private void OnDestroy()
@@ -175,6 +184,7 @@ public class RobotBrain : Agent
         lastSteerAction = 0f;
         holdTicks = 0;
         burstDropoutRemaining = 0;
+        lectureEpisodeReward = 0f;
 
         if (cameraServo != null)
         {
@@ -298,7 +308,7 @@ public class RobotBrain : Agent
         ExecuteGripperAction(gripperAction);
 
         // 3. Расчет наград
-        CalculateRewards(gas, steer, gripperAction);
+        CalculateRewards(gas, steer);
 
         lastGasAction = gas;
         lastSteerAction = steer;
@@ -308,7 +318,6 @@ public class RobotBrain : Agent
     {
         if (actionID == 1) // Закрыть
         {
-            gripperClosed = true;
             if (gripperLeftClaw != null) gripperLeftClaw.localRotation = Quaternion.Euler(0, 15, 0);
             if (gripperRightClaw != null) gripperRightClaw.localRotation = Quaternion.Euler(0, -15, 0);
 
@@ -325,7 +334,6 @@ public class RobotBrain : Agent
         }
         else if (actionID == 2) // Открыть
         {
-            gripperClosed = false;
             if (gripperLeftClaw != null) gripperLeftClaw.localRotation = Quaternion.Euler(0, 0, 0);
             if (gripperRightClaw != null) gripperRightClaw.localRotation = Quaternion.Euler(0, 0, 0);
             
@@ -356,16 +364,6 @@ public class RobotBrain : Agent
         }
     }
 
-    private void TryAutoCaptureBall()
-    {
-        if (!autoCaptureOnContact || hasBall || gripperController == null || gripperController.IsHoldingBall())
-        {
-            return;
-        }
-
-        TryCaptureBall(IsBallCaptureReady());
-    }
-
     private bool TryCaptureBall(bool captureReady)
     {
         if (!captureReady || yoloCamera == null || gripperController == null || gripperController.IsHoldingBall())
@@ -390,37 +388,6 @@ public class RobotBrain : Agent
         return true;
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        TryCaptureBallFromCollision(collision);
-    }
-
-    private void OnCollisionStay(Collision collision)
-    {
-        TryCaptureBallFromCollision(collision);
-    }
-
-    private void TryCaptureBallFromCollision(Collision collision)
-    {
-        if (!autoCaptureOnContact || collision == null || hasBall || yoloCamera == null)
-        {
-            return;
-        }
-
-        Transform ballTransform = yoloCamera.GetBallTransform();
-        if (ballTransform == null)
-        {
-            return;
-        }
-
-        if (collision.transform != ballTransform && !collision.transform.IsChildOf(ballTransform))
-        {
-            return;
-        }
-
-        TryCaptureBall(true);
-    }
-
     private bool IsBallCaptureReady()
     {
         if (hasBall || (gripperController != null && gripperController.IsHoldingBall()))
@@ -428,9 +395,9 @@ public class RobotBrain : Agent
             return true;
         }
 
-        if (hardwareSensors != null && hardwareSensors.isBallInGripper)
+        if (hardwareSensors != null)
         {
-            return true;
+            return hardwareSensors.isBallInGripper;
         }
 
         return GetBallCaptureDistance() <= gripperCaptureRadius;
@@ -452,12 +419,29 @@ public class RobotBrain : Agent
         return gripperController.GetDistanceToHoldPoint(ballTransform.gameObject);
     }
 
-    private void CalculateRewards(float gas, float steer, int gripperAction)
+    private void CalculateRewards(float gas, float steer)
     {
         float currentDistance = GetDistanceToBall();
+
+        if (hasBall || (gripperController != null && gripperController.IsHoldingBall()))
+        {
+            hasBall = true;
+            holdTicks++;
+            AddLectureReward(holdStepReward, "Hold");
+
+            if (holdTicks >= requiredHoldSteps)
+            {
+                AddLectureReward(terminalSuccessReward, "SuccessTerminal");
+                Academy.Instance.StatsRecorder.Add("GFSX/Success", 1f, StatAggregationMethod.Sum);
+                EndEpisode();
+            }
+            return;
+        }
+        holdTicks = 0;
+
         if (IsBallLost(currentDistance))
         {
-            AddReward(lostBallPenalty);
+            AddLectureReward(lostBallPenalty, "BallLost");
             Academy.Instance.StatsRecorder.Add("GFSX/BallLost", 1f, StatAggregationMethod.Sum);
             Academy.Instance.StatsRecorder.Add("GFSX/BallLostDistance", GetSafeMetricValue(currentDistance));
             Academy.Instance.StatsRecorder.Add("GFSX/BallLostY", GetBallYForMetrics());
@@ -466,97 +450,43 @@ public class RobotBrain : Agent
             return;
         }
 
-        float distanceDelta = previousDistanceToBall - currentDistance;
-
-        // Небольшая цена времени и энергии, чтобы бесцельная езда не была нейтральной стратегией.
-        AddReward(-0.001f);
-        AddReward(-(Mathf.Abs(gas) * 0.0005f + Mathf.Abs(steer) * 0.001f));
-
-        float progressReward = 0f;
-        if (distanceDelta > 0)
-        {
-            float multiplier = currentDistance < 0.5f ? 3.0f : 1.5f;
-            progressReward = Mathf.Clamp(distanceDelta, 0f, 0.08f) * multiplier;
-        }
-        else if (distanceDelta < 0)
-        {
-            progressReward = Mathf.Clamp(distanceDelta, -0.08f, 0f) * 0.5f;
-        }
-        AddReward(progressReward);
-        previousDistanceToBall = currentDistance;
-
-        if (lastObservedBallVisible)
-        {
-            float centerDiff = Mathf.Abs(lastObservedBallAngle);
-            AddReward(0.01f);
-            AddReward((1.0f - centerDiff) * 0.025f);
-            AddReward((1.0f - lastObservedBallDistance) * 0.01f);
-        }
-        else
-        {
-            AddReward(-0.002f);
-        }
-
-        if (currentDistance < 1.2f)
-        {
-            AddReward((1.2f - currentDistance) * 0.01f);
-        }
-
-        if (currentDistance < 0.4f)
-        {
-            AddReward(0.03f);
-        }
-
-        float gasJerk = Mathf.Abs(gas - lastGasAction);
-        float steerJerk = Mathf.Abs(steer - lastSteerAction);
-        AddReward(-(gasJerk + steerJerk) * 0.005f);
-
         bool captureReady = IsBallCaptureReady();
-        if (captureReady && !hasBall)
+        bool shouldApplyShapingReward = StepCount <= 0 || StepCount % LectureRewardDecisionPeriod == 0;
+        if (shouldApplyShapingReward)
         {
-            AddReward(0.08f);
-        }
+            float distanceDelta = previousDistanceToBall - currentDistance;
 
-        if (gripperAction == 1)
-        {
-            AddReward(captureReady ? 0.25f : -0.01f);
-        }
-        else if (gripperAction == 2 && !hasBall)
-        {
-            AddReward(-0.005f);
-        }
+            float approachScale = currentDistance < 0.5f ? LectureNearApproachScale : LectureFarApproachScale;
+            float progressReward = Mathf.Clamp(distanceDelta, -LectureDistanceDeltaClamp, LectureDistanceDeltaClamp) * approachScale;
+            AddLectureReward(progressReward, "DistanceDelta");
+            previousDistanceToBall = currentDistance;
 
-        if (hardwareSensors != null)
-        {
-            float wallPenalty = 0f;
-            if (hardwareSensors.ultrasoundValue < 0.25f)
+            if (lastObservedBallVisible)
             {
-                wallPenalty += Mathf.Lerp(0.0f, 0.04f, 1.0f - hardwareSensors.ultrasoundValue / 0.25f);
+                float centerDiff = Mathf.Abs(lastObservedBallAngle);
+                AddLectureReward((1.0f - centerDiff) * LectureCenteringRewardScale, "Centering");
             }
 
-            if (hardwareSensors.leftIRObstacle == 1 || hardwareSensors.rightIRObstacle == 1)
+            float gasJerk = Mathf.Abs(gas - lastGasAction);
+            float steerJerk = Mathf.Abs(steer - lastSteerAction);
+            AddLectureReward(-(gasJerk + steerJerk) * LectureActionRatePenaltyScale, "ActionRate");
+
+            if (hardwareSensors != null)
             {
-                wallPenalty += Mathf.Abs(gas) > 0.05f ? 0.03f : 0.015f;
+                float wallPenalty = 0f;
+                if (hardwareSensors.ultrasoundValue < LectureWallDistanceThreshold)
+                {
+                    wallPenalty += Mathf.Lerp(0.0f, LectureWallPenalty, 1.0f - hardwareSensors.ultrasoundValue / LectureWallDistanceThreshold);
+                }
+
+                if (hardwareSensors.leftIRObstacle == 1 || hardwareSensors.rightIRObstacle == 1)
+                {
+                    wallPenalty += LectureWallPenalty;
+                }
+
+                AddLectureReward(-wallPenalty, "Walls");
             }
-
-            AddReward(-wallPenalty);
         }
-
-        if (hasBall || (gripperController != null && gripperController.IsHoldingBall()))
-        {
-            hasBall = true;
-            holdTicks++;
-            AddReward(holdStepReward);
-
-            if (holdTicks >= requiredHoldSteps)
-            {
-                AddReward(terminalSuccessReward);
-                Academy.Instance.StatsRecorder.Add("GFSX/Success", 1f, StatAggregationMethod.Sum);
-                EndEpisode();
-            }
-            return;
-        }
-        holdTicks = 0;
 
         if (Academy.Instance.IsCommunicatorOn)
         {
@@ -565,6 +495,7 @@ public class RobotBrain : Agent
             Academy.Instance.StatsRecorder.Add("GFSX/HoldingBall", hasBall ? 1f : 0f);
             Academy.Instance.StatsRecorder.Add("GFSX/CaptureReady", captureReady ? 1f : 0f);
             Academy.Instance.StatsRecorder.Add("GFSX/CaptureDistance", GetBallCaptureDistance());
+            Academy.Instance.StatsRecorder.Add("GFSX/LectureRewardLedger", lectureEpisodeReward);
         }
 
         // Проверка падения или опрокидывания
@@ -578,10 +509,38 @@ public class RobotBrain : Agent
 
         if (transform.localPosition.y < -1f || tiltX > 45f || tiltZ > 45f)
         {
-            AddReward(-3f);
+            AddLectureReward(LectureTerminalFailurePenalty, "FallOrFlip");
             Academy.Instance.StatsRecorder.Add("GFSX/FallOrFlip", 1f, StatAggregationMethod.Sum);
             EndEpisode();
             return;
+        }
+    }
+
+    private void AddLectureReward(float reward, string statName)
+    {
+        if (Mathf.Approximately(reward, 0f))
+        {
+            return;
+        }
+
+        float appliedReward = reward;
+        if (reward > 0f)
+        {
+            float remainingPositiveReward = LectureMaxEpisodeReward - lectureEpisodeReward;
+            if (remainingPositiveReward <= 0f)
+            {
+                return;
+            }
+
+            appliedReward = Mathf.Min(reward, remainingPositiveReward);
+        }
+
+        AddReward(appliedReward);
+        lectureEpisodeReward += appliedReward;
+
+        if (Academy.Instance.IsCommunicatorOn && !string.IsNullOrEmpty(statName))
+        {
+            Academy.Instance.StatsRecorder.Add($"GFSX/Reward/{statName}", appliedReward, StatAggregationMethod.Sum);
         }
     }
 
