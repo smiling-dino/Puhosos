@@ -36,7 +36,7 @@ public class SimulatedYoloCamera : MonoBehaviour
 
         // 2. Проверка угла обзора (FOV)
         Vector3 directionToBall = (targetBall.position - transform.position).normalized;
-        float angle = GetHorizontalAngleToBall();
+        float angle = Mathf.Abs(GetSignedHorizontalAngleToBall());
         if (float.IsNaN(angle) || float.IsInfinity(angle)) return false;
         if (angle > (horizontalFov / 2f)) return false;
 
@@ -56,6 +56,11 @@ public class SimulatedYoloCamera : MonoBehaviour
 
     public float GetHorizontalAngleToBall()
     {
+        return Mathf.Abs(GetSignedHorizontalAngleToBall());
+    }
+
+    public float GetSignedHorizontalAngleToBall()
+    {
         if (targetBall == null) return 180f;
         if (!IsFinite(targetBall.position) || !IsFinite(transform.position)) return 180f;
 
@@ -67,7 +72,11 @@ public class SimulatedYoloCamera : MonoBehaviour
             return 180f;
         }
 
-        return Vector3.Angle(flatForward.normalized, flatDirectionToBall.normalized);
+        return Vector3.SignedAngle(
+            flatForward.normalized,
+            flatDirectionToBall.normalized,
+            Vector3.up
+        );
     }
 
     /// <summary>
@@ -79,7 +88,7 @@ public class SimulatedYoloCamera : MonoBehaviour
 
         Vector3 viewportPos = cam.WorldToViewportPoint(targetBall.position);
         // Преобразуем диапазон [0, 1] в [-1, 1]
-        return (viewportPos.x - 0.5f) * 2f;
+        return Mathf.Clamp((viewportPos.x - 0.5f) * 2f, -1f, 1f);
     }
 
     /// <summary>

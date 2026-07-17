@@ -1964,6 +1964,13 @@ MonoBehaviour:
   leftIRPoint: {fileID: 7961103783440145105}
   rightIRPoint: {fileID: 7709043513755986151}
   gripperIRPoint: {fileID: 5232017878060410414}
+  robotRoot: {fileID: 7105162563793981822}
+  obstacleLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  gripperDetectionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
   usMaxDistance: 10
   usRayCount: 5
   usConeAngle: 30
@@ -1988,6 +1995,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GripperController
   holdPoint: {fileID: 3019104793253584866}
+  liftRoot: {fileID: 3019104793253584866}
+  maxLiftHeightMeters: 0.15
+  liftSpeedMetersPerSecond: 0.1
 --- !u!114 &3145633081714692616
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2005,7 +2015,7 @@ MonoBehaviour:
     NumStackedVectorObservations: 4
     m_ActionSpec:
       m_NumContinuousActions: 3
-      BranchSizes: 03000000
+      BranchSizes: 0300000003000000
     VectorActionSize: 
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
@@ -2043,6 +2053,39 @@ MonoBehaviour:
   hasBall: 0
   gripperLeftClaw: {fileID: 0}
   gripperRightClaw: {fileID: 0}
+  gripperCaptureRadius: 0.08
+  cameraYawLimitDegrees: 90
+  cameraTurnSpeedDegrees: 50
+  requiredLiftHeightMeters: 0.08
+  requiredStableLiftDecisions: 10
+  enableDomainRandomization: 1
+  maxBallDistanceForEpisode: 20
+  maxBallDropBelowArena: 1
+  timePenaltyPerDecision: 0.0005
+  distancePotentialWeight: 0.3
+  distancePotentialMaxPerDecision: 0.03
+  bodyAlignmentPotentialWeight: 0.05
+  alignmentPotentialMaxPerDecision: 0.01
+  firstAcquisitionReward: 0.05
+  captureZoneReward: 0.1
+  confirmedGraspReward: 0.25
+  liftPotentialWeight: 0.15
+  liftPotentialMaxPerDecision: 0.03
+  terminalSuccessReward: 1
+  ballLostBeforeCapturePenalty: -0.25
+  droppedBallPenalty: -1
+  fallOrFlipPenalty: -1
+  ordinaryCollisionPenalty: -0.02
+  collisionPenaltyCooldownSeconds: 0.5
+  wheelEffortPenaltyScale: 0.00025
+  cameraEffortPenaltyScale: 0.00002
+  liftEffortPenaltyScale: 0.00002
+  wheelSmoothnessPenaltyScale: 0.00005
+  auxiliarySmoothnessPenaltyScale: 0.00001
+  dangerPenaltyScale: 0.001
+  safeUltrasoundDistanceMeters: 0.25
+  maxDistanceForPotentialMeters: 2
+  maxTimeSinceDetectionSeconds: 5
 --- !u!114 &4050004874437940965
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -22,7 +22,7 @@ behaviors:
         memory_size: 256
     reward_signals:
       extrinsic:
-        gamma: 0.99
+        gamma: 0.995
         strength: 1.0
     keep_checkpoints: 5
     max_steps: 5000000

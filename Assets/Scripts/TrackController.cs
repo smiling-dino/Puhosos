@@ -25,6 +25,12 @@ public class TrackController : MonoBehaviour
     private float currentLeftPwm = 0f;
     private float currentRightPwm = 0f;
 
+    public float MaxLinearCmd => maxLinearCmd;
+    public float LeftPwmNormalized => NormalizePwm(currentLeftPwm);
+    public float RightPwmNormalized => NormalizePwm(currentRightPwm);
+    public float ForwardPwmNormalized => (LeftPwmNormalized + RightPwmNormalized) * 0.5f;
+    public float TurnPwmNormalized => (LeftPwmNormalized - RightPwmNormalized) * 0.5f;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -41,6 +47,7 @@ public class TrackController : MonoBehaviour
     public void SetInputs(float gas, float steer)
     {
         gas = Mathf.Clamp(gas, -maxLinearCmd, maxLinearCmd);
+        steer = Mathf.Clamp(steer, -1f, 1f);
         
         // Математика дифференциального привода
         float leftTrackCmd = gas + steer * turnK;
@@ -54,6 +61,13 @@ public class TrackController : MonoBehaviour
 
         currentLeftPwm = Mathf.MoveTowards(currentLeftPwm, leftPwmTarget, maxPwmStep);
         currentRightPwm = Mathf.MoveTowards(currentRightPwm, rightPwmTarget, maxPwmStep);
+    }
+
+    private float NormalizePwm(float pwm)
+    {
+        float maxTrackCommand = Mathf.Max(0.001f, maxLinearCmd + Mathf.Abs(turnK));
+        float maxReachablePwm = Mathf.Max(1f, maxTrackCommand * pwmMultiplier);
+        return Mathf.Clamp(pwm / maxReachablePwm, -1f, 1f);
     }
 
     private float ApplyMotorLogic(float pwm)

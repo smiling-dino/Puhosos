@@ -13,6 +13,12 @@ public class VirtualSensors : MonoBehaviour
     public Transform rightIRPoint;
     [Tooltip("ИК датчик внутри клешни")]
     public Transform gripperIRPoint;
+    [Tooltip("Корень робота, коллайдеры которого датчики должны игнорировать")]
+    public Transform robotRoot;
+
+    [Header("=== Фильтрация физики ===")]
+    public LayerMask obstacleLayers = ~0;
+    public LayerMask gripperDetectionLayers = ~0;
 
     [Header("=== Настройки Ультразвука ===")]
     [Tooltip("Максимальная дистанция УЗ датчика (метров)")]
@@ -38,6 +44,16 @@ public class VirtualSensors : MonoBehaviour
     public int leftIRObstacle = 0;    // 1 - стена, 0 - пусто
     public int rightIRObstacle = 0;   // 1 - стена, 0 - пусто
     public bool isBallInGripper = false;
+
+    public float UltrasoundDistanceMeters => ultrasoundValue * usMaxDistance;
+
+    private void Awake()
+    {
+        if (robotRoot == null)
+        {
+            robotRoot = transform;
+        }
+    }
 
     void FixedUpdate()
     {
@@ -68,12 +84,18 @@ public class VirtualSensors : MonoBehaviour
             Vector3 direction = rotation * centerPoint.forward;
 
             // Пускаем луч
-            RaycastHit[] hits = Physics.RaycastAll(origin, direction, usMaxDistance);
+            RaycastHit[] hits = Physics.RaycastAll(
+                origin,
+                direction,
+                usMaxDistance,
+                obstacleLayers,
+                QueryTriggerInteraction.Ignore
+            );
             
             // Ищем самый близкий объект (игнорируя мяч)
             foreach (var hit in hits)
             {
-                if (hit.collider.CompareTag(ballTag)) 
+                if (IsSelfCollider(hit.collider) || hit.collider.CompareTag(ballTag))
                     continue; // Игнорируем мяч
 
                 if (hit.distance < minDistance)
@@ -121,15 +143,30 @@ public class VirtualSensors : MonoBehaviour
         Vector3 direction = gripperIRPoint.forward;
 
         // Пускаем одиночный луч из клешни
-        if (Physics.Raycast(origin, direction, out RaycastHit hit, irGripperDistance))
+        RaycastHit[] hits = Physics.RaycastAll(
+            origin,
+            direction,
+            irGripperDistance,
+            gripperDetectionLayers,
+            QueryTriggerInteraction.Ignore
+        );
+
+        float closestBallDistance = float.PositiveInfinity;
+        foreach (RaycastHit hit in hits)
         {
-            // Проверяем, что пойман именно целевой мяч
-            if (hit.collider.CompareTag(ballTag))
+            if (IsSelfCollider(hit.collider) || !hit.collider.CompareTag(ballTag))
             {
-                isBallInGripper = true;
-                Debug.DrawRay(origin, direction * hit.distance, Color.magenta);
-                return;
+                continue;
             }
+
+            closestBallDistance = Mathf.Min(closestBallDistance, hit.distance);
+        }
+
+        if (!float.IsPositiveInfinity(closestBallDistance))
+        {
+            isBallInGripper = true;
+            Debug.DrawRay(origin, direction * closestBallDistance, Color.magenta);
+            return;
         }
 
         isBallInGripper = false;
@@ -146,13 +183,39 @@ public class VirtualSensors : MonoBehaviour
         Vector3 origin = point.position;
         Vector3 direction = point.forward;
 
-        if (Physics.Raycast(origin, direction, out RaycastHit hit, distance))
+        RaycastHit[] hits = Physics.RaycastAll(
+            origin,
+            direction,
+            distance,
+            obstacleLayers,
+            QueryTriggerInteraction.Ignore
+        );
+
+        float closestDistance = float.PositiveInfinity;
+        foreach (RaycastHit hit in hits)
         {
-            Debug.DrawRay(origin, direction * hit.distance, Color.red);
-            return true; // Наткнулись на стену/препятствие
+            if (IsSelfCollider(hit.collider) || hit.collider.CompareTag(ballTag))
+            {
+                continue;
+            }
+
+            closestDistance = Mathf.Min(closestDistance, hit.distance);
+        }
+
+        if (!float.IsPositiveInfinity(closestDistance))
+        {
+            Debug.DrawRay(origin, direction * closestDistance, Color.red);
+            return true;
         }
 
         Debug.DrawRay(origin, direction * distance, debugColor);
         return false; // Путь чист
+    }
+
+    private bool IsSelfCollider(Collider candidate)
+    {
+        return candidate != null
+            && robotRoot != null
+            && (candidate.transform == robotRoot || candidate.transform.IsChildOf(robotRoot));
     }
 }

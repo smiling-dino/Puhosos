@@ -191,6 +191,13 @@ MonoBehaviour:
   leftIRPoint: {fileID: 964502214218896034}
   rightIRPoint: {fileID: 7240945156476981806}
   gripperIRPoint: {fileID: 188951001723576240}
+  robotRoot: {fileID: 1744279376215119816}
+  obstacleLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  gripperDetectionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
   usMaxDistance: 10
   usRayCount: 5
   usConeAngle: 30
@@ -215,6 +222,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GripperController
   holdPoint: {fileID: 7579128443050370186}
+  liftRoot: {fileID: 7579128443050370186}
+  maxLiftHeightMeters: 0.15
+  liftSpeedMetersPerSecond: 0.1
 --- !u!114 &4625813608166944264
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -232,7 +242,7 @@ MonoBehaviour:
     NumStackedVectorObservations: 4
     m_ActionSpec:
       m_NumContinuousActions: 3
-      BranchSizes: 03000000
+      BranchSizes: 0300000003000000
     VectorActionSize: 
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
