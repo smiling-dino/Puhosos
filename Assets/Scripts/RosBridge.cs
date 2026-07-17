@@ -1,77 +1,80 @@
 using UnityEngine;
 using Unity.Robotics.ROSTCPConnector;
-using RosMessageTypes.Geometry; // Требуется для TwistMsg
-using RosMessageTypes.Std;      // Требуется для Int32Msg и Float32Msg
+using RosMessageTypes.Geometry;
+using RosMessageTypes.Std;
 
 public class ROSBridge : MonoBehaviour
 {
-    public string topicName = "/cmd_vel";
-    public float maxLinearSpeed = 0.5f;   // Линейный лимит реального робота (м/с)
-    public float maxAngularSpeed = 1.0f;  // Угловой лимит реального робота (рад/с)
-
-    [Range(0.1f, 1f)]
-    public float emaAlpha = 0.8f;         // Коэффициент сглаживания (0.8 = высокая отзывчивость)
-
     private ROSConnection ros;
-    private float smoothGas = 0f;
-    private float smoothSteering = 0f;
+
+    [Header("ROS Command Topics")]
+    public string cmdVelTopic = "/cmd_vel";
+    public string cmdGripperTopic = "/cmd_gripper";
+    public string cmdCameraPanTopic = "/cmd_camera_pan";
+
+    [Header("Robot Speed Limits")]
+    public float maxLinearSpeed = 0.5f;   // макс. скорость в м/с
+    public float maxAngularSpeed = 1.5f;  // макс. скорость поворота в рад/с
 
     void Start()
     {
-        // Получаем экземпляр ROS-подключения
         ros = ROSConnection.GetOrCreateInstance();
-        
-        // Регистрируем топики для публикации
-        ros.RegisterPublisher<TwistMsg>(topicName);
-        ros.RegisterPublisher<Int32Msg>("/cmd_gripper");
-        ros.RegisterPublisher<Float32Msg>("/cmd_camera_pan");
 
-            // ... в методе Start() добавь:
-    ros.RegisterPublisher<Int32Msg>("/cmd_arm");
+        // Регистрируем топики отправки команд на робота
+        ros.RegisterPublisher<TwistMsg>(cmdVelTopic);
+        ros.RegisterPublisher<Int32Msg>(cmdGripperTopic);
+        ros.RegisterPublisher<Float32Msg>(cmdCameraPanTopic);
     }
 
-    // ... в конце класса добавь новый метод:
-    public void PublishArmCmd(int cmd)
+    /// <summary>
+    /// Отправка скоростей на моторы (газ и поворот руля)
+    /// </summary>
+    public void PublishCmdVel(float gas, float steer)
     {
-        Int32Msg msg = new Int32Msg();
-        msg.data = cmd;
-        ros.Publish("/cmd_arm", msg);
-    }
-    
+        TwistMsg twist = new TwistMsg();
 
-    // Метод отправки сглаженных скоростей в /cmd_vel
-    public void PublishCommand(float gas, float steering)
-    {
-        if (Mathf.Approximately(gas, 0f) && Mathf.Approximately(steering, 0f))
-        {
-            smoothGas = 0f;
-            smoothSteering = 0f;
-        }
-        else
-        {
-            smoothGas = emaAlpha * gas + (1f - emaAlpha) * smoothGas;
-            smoothSteering = emaAlpha * steering + (1f - emaAlpha) * smoothSteering;
-        }
+        // Переводим выход нейросети [-1, 1] в реальные физические лимиты
+        twist.linear.x = gas * maxLinearSpeed;
+        twist.angular.z = -steer * maxAngularSpeed; 
 
-        TwistMsg cmd = new TwistMsg();
-        cmd.linear.x = smoothGas * maxLinearSpeed;
-        cmd.angular.z = smoothSteering * maxAngularSpeed;
-
-        ros.Publish(topicName, cmd);
+        ros.Publish(cmdVelTopic, twist);
     }
 
-    // Метод отправки команд манипулятора в /cmd_gripper
-    public void PublishGripperCmd(int cmd)
+    /// <summary>
+    /// Отправка команды зажатия/разжатия клешни
+    /// </summary>
+    public void PublishGripperCmd(int actionID)
     {
-        Int32Msg msg = new Int32Msg();
-        msg.data = cmd;
-        ros.Publish("/cmd_gripper", msg);
+        Int32Msg msg = new Int32Msg { data = actionID };
+        ros.Publish(cmdGripperTopic, msg);
     }
 
-    // Метод отправки угла камеры в /cmd_camera_pan
-    public void PublishCameraCmd(float yaw)
+    /// <summary>
+    /// Отправка угла поворота сервопривода камеры
+    /// </summary>
+    public void PublishCameraCmd(float angleDegrees)
     {
-        Float32Msg msg = new Float32Msg(yaw);
-        ros.Publish("/cmd_camera_pan", msg);
+        Float32Msg msg = new Float32Msg { data = angleDegrees };
+        ros.Publish(cmdCameraPanTopic, msg);
+    }
+
+    // ==========================================
+    // МЕТОДЫ СОВМЕСТИМОСТИ ДЛЯ SimpleControl.cs
+    // ==========================================
+
+    /// <summary>
+    /// Старый метод управления движением
+    /// </summary>
+    public void PublishCommand(float gas, float steer)
+    {
+        PublishCmdVel(gas, steer);
+    }
+
+    /// <summary>
+    /// Старый метод управления манипулятором/клешней
+    /// </summary>
+    public void PublishArmCmd(int actionID)
+    {
+        PublishGripperCmd(actionID);
     }
 }

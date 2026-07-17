@@ -21,8 +21,8 @@ public class SimpleControl : MonoBehaviour
         // wasd by default !!!!!!!!!!!!!!!!!!!!!!!!
         if (keyboard.aKey.isPressed) move = 1f;
         if (keyboard.dKey.isPressed) move = -1f;
-        if (keyboard.wKey.isPressed) turn = -1f;
-        if (keyboard.sKey.isPressed) turn = 1f;
+        if (keyboard.sKey.isPressed) turn = -1f;
+        if (keyboard.wKey.isPressed) turn = 1f;
         bridge.PublishCommand(move, turn);
 
         // --- КЛЕШНЯ: ОТКРЫТЬ/ЗАКРЫТЬ (Q/E) ---
