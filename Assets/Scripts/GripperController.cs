@@ -51,6 +51,28 @@ public class GripperController : MonoBehaviour
         heldBall.transform.localRotation = Quaternion.identity;
     }
 
+    public bool IsBallInsideCaptureZone(GameObject ball, float captureRadius)
+    {
+        return GetDistanceToHoldPoint(ball) <= captureRadius;
+    }
+
+    public float GetDistanceToHoldPoint(GameObject ball)
+    {
+        if (holdPoint == null || ball == null)
+        {
+            return float.PositiveInfinity;
+        }
+
+        Collider targetCollider = ball.GetComponent<Collider>();
+        if (targetCollider != null && targetCollider.enabled)
+        {
+            Vector3 closestPoint = targetCollider.ClosestPoint(holdPoint.position);
+            return Vector3.Distance(holdPoint.position, closestPoint);
+        }
+
+        return Vector3.Distance(holdPoint.position, ball.transform.position);
+    }
+
     public void ReleaseBall()
     {
         if (heldBall == null)

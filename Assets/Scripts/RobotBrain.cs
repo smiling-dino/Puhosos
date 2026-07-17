@@ -22,6 +22,9 @@ public class RobotBrain : Agent
     [SerializeField] private bool hasBall = false;
     [SerializeField] private Transform gripperLeftClaw;
     [SerializeField] private Transform gripperRightClaw;
+    [SerializeField] private float gripperCaptureRadius = 0.22f;
+    [SerializeField] private bool autoCaptureOnContact = true;
+    [SerializeField] private bool gripperClosed = false;
 
     [Header("Training Robustness")]
     [SerializeField] private bool enableDomainRandomization = true;
@@ -132,6 +135,8 @@ public class RobotBrain : Agent
     private void FixedUpdate()
     {
         PublishRosTelemetryIfNeeded();
+        HandleManualGripperInput();
+        TryAutoCaptureBall();
     }
 
     private void OnDestroy()
@@ -237,7 +242,8 @@ public class RobotBrain : Agent
         sensor.AddObservation(Mathf.Clamp01(ultrasound + ultrasoundNoise));               // 1. УЗ-дальномер с шумом
         sensor.AddObservation(hardwareSensors != null ? hardwareSensors.leftIRObstacle : 0);  // 2. Левый ИК
         sensor.AddObservation(hardwareSensors != null ? hardwareSensors.rightIRObstacle : 0); // 3. Правый ИК
-        sensor.AddObservation(hardwareSensors != null && hardwareSensors.isBallInGripper ? 1.0f : 0.0f); // 4. ИК в клешне
+        bool ballCaptureReady = IsBallCaptureReady();
+        sensor.AddObservation(ballCaptureReady ? 1.0f : 0.0f); // 4. Мяч в зоне клешни
         sensor.AddObservation(observedVisible ? normAngle : 0f);                          // 5. Угол до мяча
         sensor.AddObservation(lastObservedBallDistance);                                   // 6. Дистанция до мяча
         sensor.AddObservation(lastKnownBallDirection);                                    // 7. Направление утерянного мяча
@@ -302,22 +308,24 @@ public class RobotBrain : Agent
     {
         if (actionID == 1) // Закрыть
         {
+            gripperClosed = true;
             if (gripperLeftClaw != null) gripperLeftClaw.localRotation = Quaternion.Euler(0, 15, 0);
             if (gripperRightClaw != null) gripperRightClaw.localRotation = Quaternion.Euler(0, -15, 0);
 
             // Физический захват мяча через GripperController
-            if (hardwareSensors != null && hardwareSensors.isBallInGripper && yoloCamera != null)
+            bool captureReady = IsBallCaptureReady();
+            if (Academy.Instance.IsCommunicatorOn)
             {
-                Transform ballTransform = yoloCamera.GetBallTransform();
-                if (ballTransform != null && gripperController != null && !gripperController.IsHoldingBall())
-                {
-                    gripperController.GrabBall(ballTransform.gameObject);
-                    hasBall = true;
-                }
+                Academy.Instance.StatsRecorder.Add("GFSX/CaptureAttempts", 1f, StatAggregationMethod.Sum);
+                Academy.Instance.StatsRecorder.Add("GFSX/CaptureReadyOnAttempt", captureReady ? 1f : 0f);
+                Academy.Instance.StatsRecorder.Add("GFSX/CaptureDistanceOnAttempt", GetBallCaptureDistance());
             }
+
+            TryCaptureBall(captureReady);
         }
         else if (actionID == 2) // Открыть
         {
+            gripperClosed = false;
             if (gripperLeftClaw != null) gripperLeftClaw.localRotation = Quaternion.Euler(0, 0, 0);
             if (gripperRightClaw != null) gripperRightClaw.localRotation = Quaternion.Euler(0, 0, 0);
             
@@ -328,6 +336,120 @@ public class RobotBrain : Agent
             hasBall = false;
             holdTicks = 0;
         }
+    }
+
+    private void HandleManualGripperInput()
+    {
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard == null)
+        {
+            return;
+        }
+
+        if (keyboard.spaceKey.wasPressedThisFrame || keyboard.spaceKey.isPressed)
+        {
+            ExecuteGripperAction(1);
+        }
+        else if (keyboard.leftShiftKey.wasPressedThisFrame || keyboard.leftShiftKey.isPressed)
+        {
+            ExecuteGripperAction(2);
+        }
+    }
+
+    private void TryAutoCaptureBall()
+    {
+        if (!autoCaptureOnContact || hasBall || gripperController == null || gripperController.IsHoldingBall())
+        {
+            return;
+        }
+
+        TryCaptureBall(IsBallCaptureReady());
+    }
+
+    private bool TryCaptureBall(bool captureReady)
+    {
+        if (!captureReady || yoloCamera == null || gripperController == null || gripperController.IsHoldingBall())
+        {
+            return false;
+        }
+
+        Transform ballTransform = yoloCamera.GetBallTransform();
+        if (ballTransform == null)
+        {
+            return false;
+        }
+
+        gripperController.GrabBall(ballTransform.gameObject);
+        if (!gripperController.IsHoldingBall())
+        {
+            return false;
+        }
+
+        hasBall = true;
+        Academy.Instance.StatsRecorder.Add("GFSX/CaptureSuccess", 1f, StatAggregationMethod.Sum);
+        return true;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        TryCaptureBallFromCollision(collision);
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        TryCaptureBallFromCollision(collision);
+    }
+
+    private void TryCaptureBallFromCollision(Collision collision)
+    {
+        if (!autoCaptureOnContact || collision == null || hasBall || yoloCamera == null)
+        {
+            return;
+        }
+
+        Transform ballTransform = yoloCamera.GetBallTransform();
+        if (ballTransform == null)
+        {
+            return;
+        }
+
+        if (collision.transform != ballTransform && !collision.transform.IsChildOf(ballTransform))
+        {
+            return;
+        }
+
+        TryCaptureBall(true);
+    }
+
+    private bool IsBallCaptureReady()
+    {
+        if (hasBall || (gripperController != null && gripperController.IsHoldingBall()))
+        {
+            return true;
+        }
+
+        if (hardwareSensors != null && hardwareSensors.isBallInGripper)
+        {
+            return true;
+        }
+
+        return GetBallCaptureDistance() <= gripperCaptureRadius;
+    }
+
+    private float GetBallCaptureDistance()
+    {
+        if (yoloCamera == null || gripperController == null)
+        {
+            return float.PositiveInfinity;
+        }
+
+        Transform ballTransform = yoloCamera.GetBallTransform();
+        if (ballTransform == null)
+        {
+            return float.PositiveInfinity;
+        }
+
+        return gripperController.GetDistanceToHoldPoint(ballTransform.gameObject);
     }
 
     private void CalculateRewards(float gas, float steer, int gripperAction)
@@ -389,14 +511,15 @@ public class RobotBrain : Agent
         float steerJerk = Mathf.Abs(steer - lastSteerAction);
         AddReward(-(gasJerk + steerJerk) * 0.005f);
 
-        if (hardwareSensors != null && hardwareSensors.isBallInGripper && !hasBall)
+        bool captureReady = IsBallCaptureReady();
+        if (captureReady && !hasBall)
         {
             AddReward(0.08f);
         }
 
         if (gripperAction == 1)
         {
-            AddReward(hardwareSensors != null && hardwareSensors.isBallInGripper ? 0.25f : -0.01f);
+            AddReward(captureReady ? 0.25f : -0.01f);
         }
         else if (gripperAction == 2 && !hasBall)
         {
@@ -440,6 +563,8 @@ public class RobotBrain : Agent
             Academy.Instance.StatsRecorder.Add("GFSX/DistanceToBall", currentDistance);
             Academy.Instance.StatsRecorder.Add("GFSX/BallVisible", lastObservedBallVisible ? 1f : 0f);
             Academy.Instance.StatsRecorder.Add("GFSX/HoldingBall", hasBall ? 1f : 0f);
+            Academy.Instance.StatsRecorder.Add("GFSX/CaptureReady", captureReady ? 1f : 0f);
+            Academy.Instance.StatsRecorder.Add("GFSX/CaptureDistance", GetBallCaptureDistance());
         }
 
         // Проверка падения или опрокидывания
@@ -981,7 +1106,7 @@ public class RobotBrain : Agent
             ros.Publish(rosUltrasoundTopic, new Float32Msg(hardwareSensors != null ? hardwareSensors.ultrasoundValue : 1f));
             ros.Publish(rosLeftIrTopic, new BoolMsg(hardwareSensors != null && hardwareSensors.leftIRObstacle != 0));
             ros.Publish(rosRightIrTopic, new BoolMsg(hardwareSensors != null && hardwareSensors.rightIRObstacle != 0));
-            ros.Publish(rosGripperIrTopic, new BoolMsg(hardwareSensors != null && hardwareSensors.isBallInGripper));
+            ros.Publish(rosGripperIrTopic, new BoolMsg(IsBallCaptureReady()));
             ros.Publish(rosBallVisibleTopic, new BoolMsg(lastObservedBallVisible));
             ros.Publish(rosBallAngleTopic, new Float32Msg(lastObservedBallAngle));
             ros.Publish(rosBallDistanceTopic, new Float32Msg(lastObservedBallDistance));

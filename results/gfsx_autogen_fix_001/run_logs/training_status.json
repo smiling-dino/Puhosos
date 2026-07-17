@@ -1,0 +1,29 @@
+{
+    "GFSX_Brain": {
+        "checkpoints": [
+            {
+                "steps": 240364,
+                "file_path": "results\\gfsx_autogen_fix_001\\GFSX_Brain\\GFSX_Brain-240364.onnx",
+                "reward": 18.89507246017456,
+                "creation_time": 1784263475.6861372,
+                "auxillary_file_paths": [
+                    "results\\gfsx_autogen_fix_001\\GFSX_Brain\\GFSX_Brain-240364.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 240364,
+            "file_path": "results\\gfsx_autogen_fix_001\\GFSX_Brain.onnx",
+            "reward": 18.89507246017456,
+            "creation_time": 1784263475.6861372,
+            "auxillary_file_paths": [
+                "results\\gfsx_autogen_fix_001\\GFSX_Brain\\GFSX_Brain-240364.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.2.2+cpu"
+    }
+}
