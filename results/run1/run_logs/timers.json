@@ -1,0 +1,42 @@
+{
+    "name": "root",
+    "metadata": {
+        "timer_format_version": "0.1.0",
+        "start_time_seconds": "1784201386",
+        "python_version": "3.10.12 (main, Jul  5 2023, 18:54:27) [GCC 11.2.0]",
+        "command_line_arguments": "/home/kirillnotfound/miniconda3/envs/mlagents/bin/mlagents-learn config.yaml --run-id=run1 --force --num-envs=1 --no-graphics --env=/home/kirillnotfound/unity_projects/Puhosos/all_builds/build_new2/build_serv.x86_64",
+        "mlagents_version": "1.1.0",
+        "mlagents_envs_version": "1.1.0",
+        "communication_protocol_version": "1.5.0",
+        "pytorch_version": "2.2.2+cpu",
+        "numpy_version": "1.23.5",
+        "end_time_seconds": "1784201446"
+    },
+    "total": 60.23634852199757,
+    "count": 1,
+    "self": 0.038992727000731975,
+    "children": {
+        "run_training.setup": {
+            "total": 0.05998775099578779,
+            "count": 1,
+            "self": 0.05998775099578779
+        },
+        "TrainerController.start_learning": {
+            "total": 60.13736804400105,
+            "count": 1,
+            "self": 9.828300244407728e-05,
+            "children": {
+                "TrainerController._reset_env": {
+                    "total": 60.137225548998686,
+                    "count": 1,
+                    "self": 60.137225548998686
+                },
+                "TrainerController._save_models": {
+                    "total": 4.421199992066249e-05,
+                    "count": 1,
+                    "self": 4.421199992066249e-05
+                }
+            }
+        }
+    }
+}

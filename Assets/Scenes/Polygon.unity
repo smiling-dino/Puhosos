@@ -119,6 +119,60 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &156628977
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 156628979}
+  - component: {fileID: 156628978}
+  m_Layer: 0
+  m_Name: ROSManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &156628978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 156628977}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7acef0b79454c9b4dae3f8139bc4ba77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Robotics.ROSTCPConnector::Unity.Robotics.ROSTCPConnector.ROSConnection
+  m_RosIPAddress: 192.168.2.160
+  m_RosPort: 11000
+  m_ConnectOnStart: 1
+  m_KeepaliveTime: 1
+  m_NetworkTimeoutSeconds: 2
+  m_SleepTimeSeconds: 0.01
+  m_ShowHUD: 1
+  m_TFTopics:
+  - /tf
+  listenForTFMessages: 1
+--- !u!4 &156628979
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 156628977}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1.703, y: 1.1921, z: 1.703}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1611562724}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &502569837
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -131,9 +185,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: TrainingArea_Base
       objectReference: {fileID: 0}
+    - target: {fileID: 3145633081714692616, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: m_Model
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 3145633081714692616, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: m_BehaviorType
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8241631975803193342, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: MaxStep
       value: 3000
+      objectReference: {fileID: 0}
+    - target: {fileID: 8452878500679809060, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8782922737251685030, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: m_LocalPosition.x
@@ -177,8 +243,17 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 8782922737251685030, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 156628979}
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6829131032473506175, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1294456762}
+    - targetCorrespondingSourceObject: {fileID: 6829131032473506175, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1294456761}
   m_SourcePrefab: {fileID: 100100000, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
 --- !u!1 &807556622
 GameObject:
@@ -317,6 +392,39 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!1 &1294456750 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6829131032473506175, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+  m_PrefabInstance: {fileID: 502569837}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1294456761
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1294456750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d683b38fa91c13e2386969f127af4ab9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SimpleControl
+--- !u!114 &1294456762
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1294456750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e968d706aca6a858b9c1071ba190ef47, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ROSBridge
+  topicName: /cmd_vel
+  maxLinearSpeed: 0.5
+  maxAngularSpeed: 1
+  emaAlpha: 0.8
 --- !u!850595691 &1354181355
 LightingSettings:
   m_ObjectHideFlags: 0
@@ -387,6 +495,11 @@ LightingSettings:
 --- !u!1 &1611562722 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 363926659420364126, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+  m_PrefabInstance: {fileID: 502569837}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1611562724 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8782922737251685030, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
   m_PrefabInstance: {fileID: 502569837}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1659444105
@@ -625,7 +738,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.Areas.TrainingAreaReplicator
   baseArea: {fileID: 1611562722}
-  numAreas: 5
+  numAreas: 1
   separation: 10
   buildOnly: 0
 --- !u!4 &1783778937
