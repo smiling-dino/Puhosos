@@ -15,16 +15,16 @@ public class RobotAgent : Agent
     
     [Header("=== Настройки обучения (Спавн) ===")]
     [Tooltip("Границы случайного спавна по X (от центра арены)")]
-    public float spawnAreaWidth = 4f; 
+    public float spawnAreaWidth = 3.5f;
     [Tooltip("Границы случайного спавна по Z (от центра арены)")]
-    public float spawnAreaLength = 4f;
+    public float spawnAreaLength = 3.5f;
     [Tooltip("Высота спавна мяча, чтобы он не провалился под пол")]
     public float ballSpawnHeight = 0.5f;
 
     [Header("=== Настройки Наград и Штрафов ===")]
-    public float rewardGoalReached = 5.0f;        // Успешный захват мяча
-    public float rewardCentering = 0.002f;        // Бонус за удержание мяча по центру камеры
-    public float rewardDistanceMultiplier = 0.5f; // Множитель награды за сближение с мячом
+    public float rewardGoalReached = 10.0f;        // Успешный захват мяча
+    public float rewardCentering = 1.0f;        // Бонус за удержание мяча по центру камеры
+    public float rewardDistanceMultiplier = 1.0f; // Множитель награды за сближение с мячом
     
     [Space(10)]
     public float penaltyCrash = -2.0f;            // Штраф за столкновение со стеной
@@ -32,6 +32,8 @@ public class RobotAgent : Agent
     public float penaltyJerkMultiplier = 0.005f;  // Сила штрафа за резкое управление
     public float penaltyUltrasound = -0.02f;      // Штраф за опасное сближение (УЗ-датчик)
     public float penaltyIRObstacle = -0.01f;      // Штраф за опасное сближение (ИК-датчики)
+    public float rewardTimePenalty = -0.002f;       //Штраф за время по модулю
+    public float rewardBodyAlignment = 0.002f;    // Бонус за выравнивание корпуса на мяч
     
     [Space(10)]
     [Tooltip("Включить штраф за закрытие клешни, если в ней нет мяча?")]
@@ -43,6 +45,7 @@ public class RobotAgent : Agent
 
     // --- Состояния для вычислений ИИ ---
     private Vector3 startPosition;
+    private Quaternion startRotation;
     private float previousDistanceToBall;
     
     // Память ИИ
@@ -50,15 +53,20 @@ public class RobotAgent : Agent
     private float prevSteer = 0f;
     private float lastKnownBallDirection = 0f;
     private float timeSinceLastDetection = 0f;
+    private float previousCameraOffset = 1f;
+    private bool isEpisodeResolved = false;
 
     public override void Initialize()
     {
         rb = GetComponent<Rigidbody>();
         startPosition = transform.localPosition;
+        startRotation = transform.localRotation;
     }
 
     public override void OnEpisodeBegin()
     {
+        isEpisodeResolved = false;
+
         // 1. Сброс состояния механизмов
         if (gripperController != null && gripperController.IsHoldingBall())
         {
@@ -78,13 +86,19 @@ public class RobotAgent : Agent
         
         // Отключаем интерполяцию для телепорта без визуальных глитчей
         rb.interpolation = RigidbodyInterpolation.None; 
+
         transform.localPosition = startPosition; 
+        transform.localRotation = startRotation; // <-- СБРАСЫВАЕМ ПОВОРОТ ТУТ!
+
         rb.position = transform.position; 
+        rb.rotation = transform.rotation;        // <-- СБРАСЫВАЕМ ПОВОРОТ ДЛЯ RIGIDBODY!
+
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
 
         // 3. Поиск мяча на арене (С защитой от пустых ссылок)
+        targetBall = null; // ОБЯЗАТЕЛЬНО СБРАСЫВАЕМ ССЫЛКУ ПЕРЕД ПОИСКОМ!
         Transform arena = transform.parent; 
         if (arena != null) 
         {
@@ -113,7 +127,6 @@ public class RobotAgent : Agent
         {
             float randomX = Random.Range(-spawnAreaWidth, spawnAreaWidth);
             float randomZ = Random.Range(-spawnAreaLength, spawnAreaLength);
-
             targetBall.transform.localPosition = new Vector3(randomX, ballSpawnHeight, randomZ);
 
             Rigidbody ballRb = targetBall.GetComponent<Rigidbody>();
@@ -123,7 +136,13 @@ public class RobotAgent : Agent
                 ballRb.angularVelocity = Vector3.zero;
             }
 
-            previousDistanceToBall = Vector3.Distance(transform.position, targetBall.transform.position);
+            // Считаем дистанцию от центра клешни, а не от центра робота
+            if (gripperController != null && gripperController.holdPoint != null)
+            {
+                previousDistanceToBall = Vector3.Distance(gripperController.holdPoint.position, targetBall.transform.position);
+            }
+            
+            previousCameraOffset = 1f; // Сброс камеры
         }
     }
 
@@ -184,25 +203,49 @@ public class RobotAgent : Agent
 
         CalculateRewards(gasSignal, steerSignal);
         CheckTerminalConditions();
+
+        // --- ПРОВЕРКА НА ТАЙМ-АУТ ---
+        // Если мы достигли предпоследнего шага (StepCount >= MaxStep - 1), 
+        // и эпизод еще не завершен победой или аварией - засчитываем провал.
+        if (!isEpisodeResolved && MaxStep > 0 && StepCount >= MaxStep - 1)
+        {
+            // Отправляем 0 (Провал - закончилось время)
+            Academy.Instance.StatsRecorder.Add("Custom/Success Rate", 0f, StatAggregationMethod.Average);
+            isEpisodeResolved = true;
+        }
     }
 
     private void CalculateRewards(float gasSignal, float steerSignal)
     {
-        // 1. Награда за сближение
-        if (targetBall != null && gripperController != null && !gripperController.IsHoldingBall())
+        // 1. Дельта-награда за сближение КЛЕШНИ с мячом
+        if (targetBall != null && gripperController != null && gripperController.holdPoint != null && !gripperController.IsHoldingBall())
         {
-            float currentDist = Vector3.Distance(transform.position, targetBall.transform.position);
+            float currentDist = Vector3.Distance(gripperController.holdPoint.position, targetBall.transform.position);
             float delta = previousDistanceToBall - currentDist;
             
-            if (delta > 0)
-            {
-                float closenessMult = Mathf.Clamp01(1f - (currentDist / (yoloCamera != null ? yoloCamera.maxVisionDistance : 2f)));
-                AddReward(delta * rewardDistanceMultiplier * (1f + closenessMult));
-            }
+            // Убрали if (delta > 0). Теперь приближение дает плюс, а отдаление - минус. Фармить не выйдет.
+            AddReward(delta * rewardDistanceMultiplier);
+            
             previousDistanceToBall = currentDist;
         }
 
-        // 2. Штраф за резкость управления
+        // 2. Дельта-награда за центрирование камеры (YOLO)
+        if (targetBall != null && yoloCamera != null && yoloCamera.isBallVisible)
+        {
+            float currentOffset = Mathf.Abs(yoloCamera.horizontalOffset);
+            float deltaOffset = previousCameraOffset - currentOffset;
+            
+            // Аналогично: улучшение центра дает плюс, ухудшение - минус.
+            AddReward(deltaOffset * rewardCentering);
+            
+            previousCameraOffset = currentOffset;
+        }
+        else
+        {
+            previousCameraOffset = 1f; 
+        }
+
+        // 3. Штраф за резкость управления
         float gasJerk = Mathf.Abs(gasSignal - prevGas);
         float steerJerk = Mathf.Abs(steerSignal - prevSteer);
         AddReward(-(gasJerk + steerJerk) * penaltyJerkMultiplier);
@@ -210,21 +253,16 @@ public class RobotAgent : Agent
         prevGas = gasSignal;
         prevSteer = steerSignal;
 
-        // 3. Бонус за центрирование
-        if (yoloCamera != null && yoloCamera.isBallVisible)
-        {
-            if (Mathf.Abs(yoloCamera.horizontalOffset) < 0.15f)
-            {
-                AddReward(rewardCentering);
-            }
-        }
-
-        // 4. Штраф за датчики расстояния
+        // 4. Штрафы с датчиков (столкновения)
         if (virtualSensors != null)
         {
             if (virtualSensors.ultrasoundValue < 0.2f) AddReward(penaltyUltrasound);
             if (virtualSensors.leftIRObstacle == 1 || virtualSensors.rightIRObstacle == 1) AddReward(penaltyIRObstacle);
         }
+
+        // 5. Штраф за прокрастинацию
+        // Переменная rewardTimePenalty уже отрицательная (-0.002f), поэтому просто плюсуем её.
+        AddReward(rewardTimePenalty);
     }
 
     private void CheckTerminalConditions()
@@ -232,6 +270,14 @@ public class RobotAgent : Agent
         if (gripperController != null && gripperController.IsHoldingBall())
         {
             AddReward(rewardGoalReached);
+            
+            if (!isEpisodeResolved)
+            {
+                // Отправляем 1 (Успех)
+                Academy.Instance.StatsRecorder.Add("Custom/Success Rate", 1f, StatAggregationMethod.Average);
+                isEpisodeResolved = true;
+            }
+            
             EndEpisode();
         }
     }
@@ -300,6 +346,14 @@ public class RobotAgent : Agent
         if (collision.gameObject.CompareTag("Obstacle"))
         {
             AddReward(penaltyCrash); 
+            
+            if (!isEpisodeResolved)
+            {
+                // Отправляем 0 (Провал - авария)
+                Academy.Instance.StatsRecorder.Add("Custom/Success Rate", 0f, StatAggregationMethod.Average);
+                isEpisodeResolved = true;
+            }
+            
             EndEpisode();     
         }
     }

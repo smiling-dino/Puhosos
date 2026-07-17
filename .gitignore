@@ -104,3 +104,10 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Игнорируем результаты тренировок
+results/
+
+# Игнорируем тяжелые модели
+Assets/Models/
+Assets/Models.meta

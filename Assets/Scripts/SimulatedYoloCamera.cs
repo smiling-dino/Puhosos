@@ -29,6 +29,26 @@ public class SimulatedYoloCamera : MonoBehaviour
         if (cam != null)
         {
             cam.fieldOfView = 40f;
+
+            // Устанавливаем фиксированное соотношение сторон 4:3 (или 16:9)
+            float targetAspect = 4f / 3f; 
+
+            // КРИТИЧЕСКИЙ ФИКС ДЛЯ headless / -nographics режима:
+            if (Application.isBatchMode)
+            {
+                // Задаем проекционную матрицу вручную, так как экрана нет и авто-aspect не сработает
+                cam.projectionMatrix = Matrix4x4.Perspective(
+                    cam.fieldOfView, 
+                    targetAspect, 
+                    cam.nearClipPlane, 
+                    cam.farClipPlane
+                );
+            }
+            else
+            {
+                // В режиме с графикой задаем стандартно
+                cam.aspect = targetAspect;
+            }
         }
     }
 
