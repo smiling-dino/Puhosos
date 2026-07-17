@@ -5,7 +5,8 @@ public class SimulatedYoloCamera : MonoBehaviour
 {
     [Header("Target Settings")]
     [SerializeField] private Transform targetBall;          // Ссылка на объект мяча
-    [SerializeField] private Transform robotRoot;           // Корень робота для исключения собственных коллайдеров
+    [SerializeField] private Transform robotRoot;           // Корень робота для поиска корпуса камеры
+    [SerializeField] private Collider cameraHostCollider;   // Единственный коллайдер, внутри которого находится камера
     [SerializeField] private LayerMask obstacleLayers = ~0; // Слои препятствий (стены, коробки)
 
     [Header("Camera Specs")]
@@ -26,6 +27,8 @@ public class SimulatedYoloCamera : MonoBehaviour
             TrackController controller = GetComponentInParent<TrackController>();
             robotRoot = controller != null ? controller.transform : transform.parent;
         }
+
+        ResolveCameraHostCollider();
     }
 
     /// <summary>
@@ -47,7 +50,8 @@ public class SimulatedYoloCamera : MonoBehaviour
         if (float.IsNaN(angle) || float.IsInfinity(angle)) return false;
         if (angle > (horizontalFov / 2f)) return false;
 
-        // 3. Проверка преград. Собственные коллайдеры робота и сам мяч не считаются препятствиями.
+        // 3. Проверка преград. Игнорируются только корпус, внутри которого стоит камера,
+        // и целевой мяч. Все остальные коллайдеры, включая части робота, перекрывают обзор.
         RaycastHit[] hits = Physics.RaycastAll(
             transform.position,
             directionToBall,
@@ -58,7 +62,7 @@ public class SimulatedYoloCamera : MonoBehaviour
 
         foreach (RaycastHit hit in hits)
         {
-            if (IsRobotCollider(hit.collider) || IsTargetCollider(hit.transform))
+            if (hit.collider == cameraHostCollider || IsTargetCollider(hit.transform))
             {
                 continue;
             }
@@ -137,11 +141,39 @@ public class SimulatedYoloCamera : MonoBehaviour
             && !float.IsNaN(value.z) && !float.IsInfinity(value.z);
     }
 
-    private bool IsRobotCollider(Collider candidate)
+    private void ResolveCameraHostCollider()
     {
-        return candidate != null
-            && robotRoot != null
-            && (candidate.transform == robotRoot || candidate.transform.IsChildOf(robotRoot));
+        if (cameraHostCollider != null || robotRoot == null)
+        {
+            return;
+        }
+
+        // Ищем только среди коллайдеров объектов-родителей камеры. Коллайдеры клешней,
+        // креплений и других соседних частей робота не могут стать исключением случайно.
+        Transform current = transform.parent;
+        while (current != null)
+        {
+            Collider[] colliders = current.GetComponents<Collider>();
+            foreach (Collider candidate in colliders)
+            {
+                if (candidate != null && candidate.enabled)
+                {
+                    Vector3 closestPoint = candidate.ClosestPoint(transform.position);
+                    if ((closestPoint - transform.position).sqrMagnitude <= 0.000001f)
+                    {
+                        cameraHostCollider = candidate;
+                        return;
+                    }
+                }
+            }
+
+            if (current == robotRoot)
+            {
+                break;
+            }
+
+            current = current.parent;
+        }
     }
 
     private bool IsTargetCollider(Transform candidate)

@@ -1195,6 +1195,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SimulatedYoloCamera
   targetBall: {fileID: 8118221399646328481}
   robotRoot: {fileID: 7105162563793981822}
+  cameraHostCollider: {fileID: 1116684702796292011}
   obstacleLayers:
     serializedVersion: 2
     m_Bits: 4294967295
