@@ -28,6 +28,9 @@ public class RobotBrain : Agent
     [SerializeField] private int requiredHoldSteps = 50;
     [SerializeField] private float holdStepReward = 0.03f;
     [SerializeField] private float terminalSuccessReward = 8.0f;
+    [SerializeField] private float lostBallPenalty = -2.0f;
+    [SerializeField] private float maxBallDistanceForEpisode = 20f;
+    [SerializeField] private float maxBallDropBelowArena = 1.0f;
 
     [Header("Extended Domain Randomization")]
     [SerializeField] private bool randomizeVisuals = true;
@@ -35,8 +38,11 @@ public class RobotBrain : Agent
     [SerializeField] private bool randomizeSensorModels = true;
     [SerializeField] private bool randomizeObstacleScale = true;
     [SerializeField] private Vector2 sensorScaleRange = new Vector2(0.85f, 1.15f);
+    [SerializeField] private Vector2 dynamicsScaleRange = new Vector2(0.75f, 1.15f);
     [SerializeField] private Vector2 lightIntensityRange = new Vector2(0.65f, 1.35f);
     [SerializeField] private Vector2 obstacleScaleRange = new Vector2(0.75f, 1.2f);
+    [SerializeField] private int minActionLatencyDecisions = 1;
+    [SerializeField] private int maxActionLatencyDecisions = 4;
 
     [Header("ROS Bridge")]
     [SerializeField] private bool enableRosBridge = false;
@@ -90,6 +96,7 @@ public class RobotBrain : Agent
     private float defaultIrGripperDistance = 0.08f;
     private float defaultYoloMaxDetectionDistance = 2f;
     private float defaultYoloHorizontalFov = 40f;
+    private Quaternion defaultCameraServoLocalRotation = Quaternion.identity;
     private MaterialPropertyBlock randomizationPropertyBlock;
     private static readonly Dictionary<Light, float> defaultLightIntensities = new Dictionary<Light, float>();
     private static readonly Dictionary<Light, Color> defaultLightColors = new Dictionary<Light, Color>();
@@ -111,6 +118,11 @@ public class RobotBrain : Agent
         
         // Запоминаем ЛОКАЛЬНУЮ стартовую позицию относительно нашей арены
         startLocalPosition = transform.localPosition;
+        if (cameraServo != null)
+        {
+            defaultCameraServoLocalRotation = cameraServo.localRotation;
+        }
+
         CaptureDefaultDynamics();
         CaptureBallDefaults();
         CaptureSensorDefaults();
@@ -159,6 +171,11 @@ public class RobotBrain : Agent
         holdTicks = 0;
         burstDropoutRemaining = 0;
 
+        if (cameraServo != null)
+        {
+            cameraServo.localRotation = defaultCameraServoLocalRotation;
+        }
+
         if (arenaController == null)
         {
             Debug.LogError("ArenaController не назначен", this);
@@ -167,7 +184,6 @@ public class RobotBrain : Agent
 
         arenaController.ResetArena();
 
-        transform.localRotation = Quaternion.identity;
         startLocalPosition = transform.localPosition;
 
         if (rb != null)
@@ -181,6 +197,7 @@ public class RobotBrain : Agent
         ResetActionLatency(useTrainingRandomization);
 
         previousDistanceToBall = GetDistanceToBall();
+        RecordSpawnDiagnostics(previousDistanceToBall);
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -316,6 +333,17 @@ public class RobotBrain : Agent
     private void CalculateRewards(float gas, float steer, int gripperAction)
     {
         float currentDistance = GetDistanceToBall();
+        if (IsBallLost(currentDistance))
+        {
+            AddReward(lostBallPenalty);
+            Academy.Instance.StatsRecorder.Add("GFSX/BallLost", 1f, StatAggregationMethod.Sum);
+            Academy.Instance.StatsRecorder.Add("GFSX/BallLostDistance", GetSafeMetricValue(currentDistance));
+            Academy.Instance.StatsRecorder.Add("GFSX/BallLostY", GetBallYForMetrics());
+            Academy.Instance.StatsRecorder.Add("GFSX/BallLostSpeed", GetBallSpeedForMetrics());
+            EndEpisode();
+            return;
+        }
+
         float distanceDelta = previousDistanceToBall - currentDistance;
 
         // Небольшая цена времени и энергии, чтобы бесцельная езда не была нейтральной стратегией.
@@ -441,9 +469,105 @@ public class RobotBrain : Agent
         return Vector3.Distance(transform.position, ball.position);
     }
 
+    private bool IsBallLost(float currentDistance)
+    {
+        if (yoloCamera == null || arenaController == null)
+        {
+            return false;
+        }
+
+        Transform ball = yoloCamera.GetBallTransform();
+        if (ball == null)
+        {
+            return false;
+        }
+
+        if (!IsFinite(ball.position) || !IsFinite(transform.position) || float.IsNaN(currentDistance) || float.IsInfinity(currentDistance))
+        {
+            return true;
+        }
+
+        float minY = arenaController.transform.position.y - maxBallDropBelowArena;
+        return ball.position.y < minY || currentDistance > maxBallDistanceForEpisode;
+    }
+
+    private bool IsFinite(Vector3 value)
+    {
+        return !float.IsNaN(value.x) && !float.IsInfinity(value.x)
+            && !float.IsNaN(value.y) && !float.IsInfinity(value.y)
+            && !float.IsNaN(value.z) && !float.IsInfinity(value.z);
+    }
+
+    private float GetSafeMetricValue(float value)
+    {
+        return float.IsNaN(value) || float.IsInfinity(value)
+            ? maxBallDistanceForEpisode + 1f
+            : value;
+    }
+
+    private float GetBallYForMetrics()
+    {
+        if (yoloCamera == null)
+        {
+            return 0f;
+        }
+
+        Transform ball = yoloCamera.GetBallTransform();
+        if (ball == null || !IsFinite(ball.position))
+        {
+            return 0f;
+        }
+
+        return ball.position.y;
+    }
+
+    private float GetBallSpeedForMetrics()
+    {
+        if (yoloCamera == null)
+        {
+            return 0f;
+        }
+
+        Transform ball = yoloCamera.GetBallTransform();
+        if (ball == null)
+        {
+            return 0f;
+        }
+
+        Rigidbody ballRb = ball.GetComponent<Rigidbody>();
+        if (ballRb == null || !IsFinite(ballRb.linearVelocity))
+        {
+            return 0f;
+        }
+
+        return ballRb.linearVelocity.magnitude;
+    }
+
     private bool ShouldUseTrainingRandomization()
     {
         return enableDomainRandomization && Academy.Instance.IsCommunicatorOn;
+    }
+
+    private void RecordSpawnDiagnostics(float initialDistanceToBall)
+    {
+        if (!Academy.Instance.IsCommunicatorOn || arenaController == null)
+        {
+            return;
+        }
+
+        Academy.Instance.StatsRecorder.Add("GFSX/SpawnRejectedObstacles", arenaController.LastRejectedObstacleSpawns);
+        Academy.Instance.StatsRecorder.Add("GFSX/SpawnRejectedTargets", arenaController.LastRejectedTargetSpawns);
+        Academy.Instance.StatsRecorder.Add("GFSX/SpawnRejectedTargetVisibility", arenaController.LastRejectedTargetVisibilitySpawns);
+        Academy.Instance.StatsRecorder.Add("GFSX/SpawnObstacleFallbacks", arenaController.LastObstacleFallbackSpawns);
+        Academy.Instance.StatsRecorder.Add("GFSX/SpawnTargetFallbacks", arenaController.LastTargetFallbackSpawns);
+        Academy.Instance.StatsRecorder.Add("GFSX/SpawnVisibleTargetFallbacks", arenaController.LastVisibleTargetFallbackSpawns);
+
+        float initialCameraDistanceToBall = yoloCamera != null ? yoloCamera.GetDistanceToBall() : initialDistanceToBall;
+        Academy.Instance.StatsRecorder.Add("GFSX/SpawnInitialDistanceToBall", initialDistanceToBall);
+        Academy.Instance.StatsRecorder.Add("GFSX/SpawnInitialCameraDistanceToBall", initialCameraDistanceToBall);
+        Academy.Instance.StatsRecorder.Add("GFSX/SpawnInitialBallInRange", yoloCamera != null && initialCameraDistanceToBall <= yoloCamera.MaxDetectionDistance ? 1f : 0f);
+        Academy.Instance.StatsRecorder.Add("GFSX/SpawnInitialBallHorizontalAngle", yoloCamera != null ? yoloCamera.GetHorizontalAngleToBall() : 180f);
+        Academy.Instance.StatsRecorder.Add("GFSX/SpawnInitialBallVisible", yoloCamera != null && yoloCamera.IsBallVisible() ? 1f : 0f);
     }
 
     private Vector3 GetDelayedContinuousActions(ActionBuffers actions)
@@ -465,7 +589,9 @@ public class RobotBrain : Agent
 
     private void ResetActionLatency(bool useTrainingRandomization)
     {
-        currentActionLatency = useTrainingRandomization ? Random.Range(8, 14) : 0;
+        int minLatency = Mathf.Max(0, minActionLatencyDecisions);
+        int maxLatencyExclusive = Mathf.Max(minLatency + 1, maxActionLatencyDecisions);
+        currentActionLatency = useTrainingRandomization ? Random.Range(minLatency, maxLatencyExclusive) : 0;
         actionBuffer.Clear();
 
         for (int i = 0; i < currentActionLatency; i++)
@@ -569,13 +695,7 @@ public class RobotBrain : Agent
 
         if (yoloCamera != null)
         {
-            float detectionDistance = useTrainingRandomization
-                ? RandomScaled(defaultYoloMaxDetectionDistance)
-                : defaultYoloMaxDetectionDistance;
-            float fov = useTrainingRandomization
-                ? RandomScaled(defaultYoloHorizontalFov)
-                : defaultYoloHorizontalFov;
-            yoloCamera.SetDetectionProfile(detectionDistance, fov);
+            yoloCamera.SetDetectionProfile(defaultYoloMaxDetectionDistance, defaultYoloHorizontalFov);
         }
     }
 
@@ -679,8 +799,13 @@ public class RobotBrain : Agent
 
     private float RandomScaled(float value)
     {
-        float min = Mathf.Min(sensorScaleRange.x, sensorScaleRange.y);
-        float max = Mathf.Max(sensorScaleRange.x, sensorScaleRange.y);
+        return RandomScaled(value, sensorScaleRange);
+    }
+
+    private float RandomScaled(float value, Vector2 range)
+    {
+        float min = Mathf.Min(range.x, range.y);
+        float max = Mathf.Max(range.x, range.y);
         return value * Random.Range(min, max);
     }
 
@@ -728,15 +853,15 @@ public class RobotBrain : Agent
 
         if (rb != null)
         {
-            rb.mass = useTrainingRandomization ? Random.Range(1.0f, 4.0f) : defaultRobotMass;
+            rb.mass = useTrainingRandomization ? defaultRobotMass * Random.Range(0.75f, 1.25f) : defaultRobotMass;
         }
 
         if (trackController != null)
         {
-            trackController.moveSpeed = useTrainingRandomization ? Random.Range(0.3f, 0.7f) : defaultMoveSpeed;
-            trackController.turnSpeed = useTrainingRandomization ? Random.Range(80f, 160f) : defaultTurnSpeed;
-            trackController.turnK = useTrainingRandomization ? Random.Range(0.22f, 0.38f) : defaultTurnK;
-            trackController.maxPwmStep = useTrainingRandomization ? Random.Range(8f, 25f) : defaultMaxPwmStep;
+            trackController.moveSpeed = useTrainingRandomization ? RandomScaled(defaultMoveSpeed, dynamicsScaleRange) : defaultMoveSpeed;
+            trackController.turnSpeed = useTrainingRandomization ? RandomScaled(defaultTurnSpeed, dynamicsScaleRange) : defaultTurnSpeed;
+            trackController.turnK = useTrainingRandomization ? defaultTurnK * Random.Range(0.85f, 1.15f) : defaultTurnK;
+            trackController.maxPwmStep = useTrainingRandomization ? defaultMaxPwmStep * Random.Range(0.75f, 1.25f) : defaultMaxPwmStep;
         }
 
         ApplySensorRandomization(useTrainingRandomization);
@@ -763,6 +888,11 @@ public class RobotBrain : Agent
         if (ballRb != null)
         {
             ballRb.mass = useTrainingRandomization ? defaultBallMass * Random.Range(0.5f, 2.0f) : defaultBallMass;
+        }
+
+        if (arenaController != null)
+        {
+            arenaController.ResetTargetPhysics();
         }
     }
 

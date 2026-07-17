@@ -1,0 +1,65 @@
+{
+    "GFSX_Brain": {
+        "checkpoints": [
+            {
+                "steps": 3499582,
+                "file_path": "results\\gfsx_ros_random_001\\GFSX_Brain\\GFSX_Brain-3499582.onnx",
+                "reward": -33.83998662775213,
+                "creation_time": 1784205872.684033,
+                "auxillary_file_paths": [
+                    "results\\gfsx_ros_random_001\\GFSX_Brain\\GFSX_Brain-3499582.pt"
+                ]
+            },
+            {
+                "steps": 3999982,
+                "file_path": "results\\gfsx_ros_random_001\\GFSX_Brain\\GFSX_Brain-3999982.onnx",
+                "reward": -4.903444707393646,
+                "creation_time": 1784206207.4125283,
+                "auxillary_file_paths": [
+                    "results\\gfsx_ros_random_001\\GFSX_Brain\\GFSX_Brain-3999982.pt"
+                ]
+            },
+            {
+                "steps": 4499491,
+                "file_path": "results\\gfsx_ros_random_001\\GFSX_Brain\\GFSX_Brain-4499491.onnx",
+                "reward": null,
+                "creation_time": 1784206548.9677377,
+                "auxillary_file_paths": [
+                    "results\\gfsx_ros_random_001\\GFSX_Brain\\GFSX_Brain-4499491.pt"
+                ]
+            },
+            {
+                "steps": 4999525,
+                "file_path": "results\\gfsx_ros_random_001\\GFSX_Brain\\GFSX_Brain-4999525.onnx",
+                "reward": -19.299409426175632,
+                "creation_time": 1784206896.7142236,
+                "auxillary_file_paths": [
+                    "results\\gfsx_ros_random_001\\GFSX_Brain\\GFSX_Brain-4999525.pt"
+                ]
+            },
+            {
+                "steps": 5003125,
+                "file_path": "results\\gfsx_ros_random_001\\GFSX_Brain\\GFSX_Brain-5003125.onnx",
+                "reward": -22.877854949549626,
+                "creation_time": 1784206897.0155282,
+                "auxillary_file_paths": [
+                    "results\\gfsx_ros_random_001\\GFSX_Brain\\GFSX_Brain-5003125.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 5003125,
+            "file_path": "results\\gfsx_ros_random_001\\GFSX_Brain.onnx",
+            "reward": -22.877854949549626,
+            "creation_time": 1784206897.0155282,
+            "auxillary_file_paths": [
+                "results\\gfsx_ros_random_001\\GFSX_Brain\\GFSX_Brain-5003125.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.2.2+cpu"
+    }
+}

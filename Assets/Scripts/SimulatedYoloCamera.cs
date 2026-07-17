@@ -27,14 +27,17 @@ public class SimulatedYoloCamera : MonoBehaviour
     public bool IsBallVisible()
     {
         if (targetBall == null) return false;
+        if (!IsFinite(targetBall.position) || !IsFinite(transform.position)) return false;
 
         // 1. Проверка дистанции
         float distance = Vector3.Distance(transform.position, targetBall.position);
+        if (float.IsNaN(distance) || float.IsInfinity(distance)) return false;
         if (distance > maxDetectionDistance) return false;
 
         // 2. Проверка угла обзора (FOV)
         Vector3 directionToBall = (targetBall.position - transform.position).normalized;
-        float angle = Vector3.Angle(transform.forward, directionToBall);
+        float angle = GetHorizontalAngleToBall();
+        if (float.IsNaN(angle) || float.IsInfinity(angle)) return false;
         if (angle > (horizontalFov / 2f)) return false;
 
         // 3. Проверка преград (Raycast)
@@ -49,6 +52,22 @@ public class SimulatedYoloCamera : MonoBehaviour
         }
 
         return true;
+    }
+
+    public float GetHorizontalAngleToBall()
+    {
+        if (targetBall == null) return 180f;
+        if (!IsFinite(targetBall.position) || !IsFinite(transform.position)) return 180f;
+
+        Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+        Vector3 flatDirectionToBall = Vector3.ProjectOnPlane(targetBall.position - transform.position, Vector3.up);
+
+        if (flatForward.sqrMagnitude < 0.0001f || flatDirectionToBall.sqrMagnitude < 0.0001f)
+        {
+            return 180f;
+        }
+
+        return Vector3.Angle(flatForward.normalized, flatDirectionToBall.normalized);
     }
 
     /// <summary>
@@ -70,13 +89,28 @@ public class SimulatedYoloCamera : MonoBehaviour
     {
         if (!IsBallVisible() || targetBall == null) return 1f;
 
-        float distance = Vector3.Distance(transform.position, targetBall.position);
+        float distance = GetDistanceToBall();
         return Mathf.Clamp01(distance / maxDetectionDistance);
+    }
+
+    public float GetDistanceToBall()
+    {
+        if (targetBall == null) return float.PositiveInfinity;
+        if (!IsFinite(targetBall.position) || !IsFinite(transform.position)) return float.PositiveInfinity;
+
+        return Vector3.Distance(transform.position, targetBall.position);
     }
 
     public Transform GetBallTransform()
     {
         return targetBall;
+    }
+
+    private bool IsFinite(Vector3 value)
+    {
+        return !float.IsNaN(value.x) && !float.IsInfinity(value.x)
+            && !float.IsNaN(value.y) && !float.IsInfinity(value.y)
+            && !float.IsNaN(value.z) && !float.IsInfinity(value.z);
     }
 
     public void SetDetectionProfile(float detectionDistance, float fov)
