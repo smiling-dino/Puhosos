@@ -188,14 +188,30 @@ PrefabInstance:
     - target: {fileID: 3145633081714692616, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: m_Model
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 5022602860645237092, guid: fb7ccb13970e6332d8c8a92dcbd516e4, type: 3}
     - target: {fileID: 3145633081714692616, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: m_BehaviorType
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8241631975803193342, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: MaxStep
       value: 3000
+      objectReference: {fileID: 0}
+    - target: {fileID: 8241631975803193342, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: rosBridge
+      value: 
+      objectReference: {fileID: 1294456762}
+    - target: {fileID: 8241631975803193342, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: realVision
+      value: 
+      objectReference: {fileID: 1294456774}
+    - target: {fileID: 8241631975803193342, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: realSensors
+      value: 
+      objectReference: {fileID: 1294456773}
+    - target: {fileID: 8241631975803193342, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: useRealRobot
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8452878500679809060, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: m_Enabled
@@ -254,6 +270,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6829131032473506175, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1294456761}
+    - targetCorrespondingSourceObject: {fileID: 6829131032473506175, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1294456773}
+    - targetCorrespondingSourceObject: {fileID: 6829131032473506175, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1294456774}
   m_SourcePrefab: {fileID: 100100000, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
 --- !u!1 &807556622
 GameObject:
@@ -421,10 +443,54 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e968d706aca6a858b9c1071ba190ef47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ROSBridge
-  topicName: /cmd_vel
+  cmdVelTopic: /cmd_vel
+  cmdGripperTopic: /cmd_gripper
+  cmdCameraPanTopic: /cmd_camera_pan
   maxLinearSpeed: 0.5
   maxAngularSpeed: 1
-  emaAlpha: 0.8
+--- !u!114 &1294456773
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1294456750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6df37999bb49fba0098d308c26fa91c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RealSensorsReceiver
+  ultrasoundTopic: /sensor/ultrasound
+  leftIrTopic: /sensor/ir_left
+  rightIrTopic: /sensor/ir_right
+  gripperIrTopic: /sensor/ir_gripper
+  ballVisibleTopic: /yolo/ball_visible
+  ballAngleTopic: /yolo/ball_angle
+  ballDistanceTopic: /yolo/ball_distance
+  ultrasoundValue: 1
+  leftIRObstacle: 0
+  rightIRObstacle: 0
+  isBallInGripper: 0
+  isBallVisible: 0
+  ballNormalizedAngle: 0
+  ballNormalizedDistance: 1
+--- !u!114 &1294456774
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1294456750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3246e933750db8ffd8d1c666e4ec8134, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RealVision
+  udpPort: 5005
+  useYOLO: 0
+  normalizedAngle: 0
+  normalizedDistance: 0
+  seesBall: 0
 --- !u!850595691 &1354181355
 LightingSettings:
   m_ObjectHideFlags: 0
