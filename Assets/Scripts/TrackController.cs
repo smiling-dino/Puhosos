@@ -19,7 +19,7 @@ public class TrackController : MonoBehaviour
 
     [Header("=== Коррекция оси движения ===")]
     [Tooltip("Какая локальная ось модели смотрит вперёд? Например, (0,0,1) = Z, или (1,0,0) = X, или (-1,0,0) = -X")]
-    public Vector3 forwardDirection = Vector3.forward; 
+    public Vector3 forwardDirection = Vector3.right; // forward by default
 
     private Rigidbody rb;
     private float currentLeftPwm = 0f;

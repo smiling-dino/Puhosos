@@ -19,10 +19,11 @@ public class SimpleControl : MonoBehaviour
         float move = 0;
         float turn = 0;
         // wasd by default !!!!!!!!!!!!!!!!!!!!!!!!
-        if (keyboard.aKey.isPressed) move = 1f;
-        if (keyboard.dKey.isPressed) move = -1f;
-        if (keyboard.sKey.isPressed) turn = -1f;
-        if (keyboard.wKey.isPressed) turn = 1f;
+        // adws works
+        if (keyboard.wKey.isPressed) move = 1f;
+        if (keyboard.sKey.isPressed) move = -1f;
+        if (keyboard.dKey.isPressed) turn = -1f;
+        if (keyboard.aKey.isPressed) turn = 1f;
         bridge.PublishCommand(move, turn);
 
         // --- КЛЕШНЯ: ОТКРЫТЬ/ЗАКРЫТЬ (Q/E) ---
@@ -44,3 +45,4 @@ public class SimpleControl : MonoBehaviour
         }
     }
 }
+// 

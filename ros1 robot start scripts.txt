@@ -1,0 +1,3 @@
+./start_robot_team1.sh && docker exec -it xiao_ros_brain bash
+
+source /opt/ros/noetic/setup.bash && source /root/catkin_ws/devel/setup.bash && roslaunch ros_tcp_endpoint endpoint.launch tcp_ip:=0.0.0.0 tcp_port:=11000
