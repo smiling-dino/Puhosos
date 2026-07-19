@@ -29,8 +29,6 @@ public class RobotBrain : Agent
 
     [Header("Gripper Simulation")]
     [SerializeField] private bool hasBall = false;
-    [SerializeField] private Transform gripperLeftClaw;
-    [SerializeField] private Transform gripperRightClaw;
     [SerializeField] private float gripperCaptureRadius = 0.08f;
 
     [Header("Camera Motion")]
@@ -115,6 +113,7 @@ public class RobotBrain : Agent
     private float lastObservedBallDistance = 1f;
     private int burstDropoutRemaining = 0;
     private int currentActionLatency = 0;
+    private bool captureAttemptPending = false;
     private readonly Queue<Vector3> actionBuffer = new Queue<Vector3>();
 
     private TaskStage taskStage = TaskStage.Search;
@@ -220,9 +219,10 @@ public class RobotBrain : Agent
         if (gripperController != null)
         {
             gripperController.ReleaseBall();
-            gripperController.SetClosed(false);
-            gripperController.ResetLift();
+            gripperController.ResetMechanism();
         }
+
+        captureAttemptPending = false;
 
         hasBall = false;
         lastKnownBallDirection = 0f;
@@ -340,7 +340,11 @@ public class RobotBrain : Agent
         sensor.AddObservation(Mathf.Clamp01(
             timeSinceLastDetection / Mathf.Max(0.01f, maxTimeSinceDetectionSeconds)
         ));                                                                                 // 14. Время без детекций
-        sensor.AddObservation(gripperController != null && gripperController.IsClosed ? 1f : 0f); // 15. Состояние клешни
+        sensor.AddObservation(
+            gripperController != null
+                ? gripperController.GripNormalized
+                : 0f
+        );; // 15. Состояние клешни
     }
 
     public override void OnActionReceived(ActionBuffers actions)
@@ -381,6 +385,7 @@ public class RobotBrain : Agent
 
         // 2. Считывание дискретного действия (Клешня)
         ExecuteGripperAction(gripperAction);
+        TryCompletePendingGrasp();
         int appliedLiftAction = IsHoldingBall() ? liftAction : 0;
         if (gripperController != null)
         {
@@ -413,33 +418,55 @@ public class RobotBrain : Agent
             return;
         }
 
-        if (actionID == 1 && !gripperController.IsClosed) // Закрыть
+        if (actionID == 1 && !gripperController.IsClosed)
         {
             gripperController.SetClosed(true);
-            if (gripperLeftClaw != null) gripperLeftClaw.localRotation = Quaternion.Euler(0, 15, 0);
-            if (gripperRightClaw != null) gripperRightClaw.localRotation = Quaternion.Euler(0, -15, 0);
-
-            // Физический захват мяча через GripperController
-            bool captureReady = IsBallCaptureReady();
-            if (Academy.Instance.IsCommunicatorOn)
-            {
-                Academy.Instance.StatsRecorder.Add("GFSX/CaptureAttempts", 1f, StatAggregationMethod.Sum);
-                Academy.Instance.StatsRecorder.Add("GFSX/CaptureReadyOnAttempt", captureReady ? 1f : 0f);
-                Academy.Instance.StatsRecorder.Add("GFSX/CaptureDistanceOnAttempt", GetBallCaptureDistance());
-            }
-
-            TryCaptureBall(captureReady);
+            captureAttemptPending = true;
         }
-        else if (actionID == 2 && gripperController.IsClosed) // Открыть
+        else if (actionID == 2 && gripperController.IsClosed)
         {
-            if (gripperLeftClaw != null) gripperLeftClaw.localRotation = Quaternion.Euler(0, 0, 0);
-            if (gripperRightClaw != null) gripperRightClaw.localRotation = Quaternion.Euler(0, 0, 0);
+            captureAttemptPending = false;
 
             gripperController.SetLiftAction(0);
             gripperController.ReleaseBall();
             gripperController.SetClosed(false);
+
             hasBall = false;
         }
+    }
+
+    private void TryCompletePendingGrasp()
+    {
+        if (!captureAttemptPending
+            || gripperController == null
+            || !gripperController.IsFullyClosed)
+        {
+            return;
+        }
+
+        captureAttemptPending = false;
+        bool captureReady = IsBallCaptureReady();
+
+        if (Academy.Instance.IsCommunicatorOn)
+        {
+            Academy.Instance.StatsRecorder.Add(
+                "GFSX/CaptureAttempts",
+                1f,
+                StatAggregationMethod.Sum
+            );
+
+            Academy.Instance.StatsRecorder.Add(
+                "GFSX/CaptureReadyOnAttempt",
+                captureReady ? 1f : 0f
+            );
+
+            Academy.Instance.StatsRecorder.Add(
+                "GFSX/CaptureDistanceOnAttempt",
+                GetBallCaptureDistance()
+            );
+        }
+
+        TryCaptureBall(captureReady);
     }
 
     private bool TryCaptureBall(bool captureReady)
@@ -634,9 +661,23 @@ public class RobotBrain : Agent
     private void ApplyLiftRewards()
     {
         taskStage = TaskStage.Holding;
-        float liftPotential = requiredLiftHeightMeters > 0f
-            ? Mathf.Clamp01(GetCurrentBallLiftHeight() / requiredLiftHeightMeters)
+        float ballHeightPotential =
+        requiredLiftHeightMeters > 0f
+            ? Mathf.Clamp01(
+                GetCurrentBallLiftHeight()
+                / requiredLiftHeightMeters
+            )
             : 1f;
+
+    float actuatorPotential =
+        gripperController != null
+            ? gripperController.LiftNormalized
+            : 0f;
+
+    float liftPotential = Mathf.Min(
+        ballHeightPotential,
+        actuatorPotential
+);
         float liftReward = Mathf.Clamp(
             liftPotentialWeight * (liftPotential - previousLiftPotential),
             -liftPotentialMaxPerDecision,
