@@ -455,6 +455,70 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &2249831267872854243
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6689766738518946090}
+  m_Layer: 0
+  m_Name: LiftServoPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6689766738518946090
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2249831267872854243}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: -0.64846534, z: 0, w: 0.7612442}
+  m_LocalPosition: {x: 0.00197, y: 0, z: 0.00185}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2257970109529892331}
+  m_Father: {fileID: 8599987515042751844}
+  m_LocalEulerAnglesHint: {x: 0, y: -80.852, z: 0}
+--- !u!1 &2270564504379203442
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7185678831749639771}
+  m_Layer: 0
+  m_Name: Cube003ServoPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7185678831749639771
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2270564504379203442}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.00000016673928, y: -0.012090236, z: -0.00000013546264, w: 0.999927}
+  m_LocalPosition: {x: 0.00385, y: 0, z: 0.00287}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2498392288676683062}
+  m_Father: {fileID: 2257970109529892331}
+  m_LocalEulerAnglesHint: {x: 0, y: -1.385, z: 0}
 --- !u!1 &2437528063803834421
 GameObject:
   m_ObjectHideFlags: 0
@@ -629,6 +693,7 @@ Transform:
   m_LocalScale: {x: 0.99999964, y: 1.0000001, z: 0.99999964}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 3019104793253584866}
   - {fileID: 5101141683645095791}
   - {fileID: 2153118340980006315}
   m_Father: {fileID: 2498392288676683062}
@@ -804,12 +869,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3828891212710999409}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.6408564, y: -0.29883626, z: -0.29883626, w: 0.6408564}
-  m_LocalPosition: {x: 0.015146516, y: -0.0003799939, z: 0.021601088}
-  m_LocalScale: {x: 0.010000001, y: 0.010000001, z: 0.010000001}
+  m_LocalRotation: {x: 0.038926836, y: -0.26371187, z: -0.1432079, w: 0.95311713}
+  m_LocalPosition: {x: 0.00635, y: -0.00236, z: 0.001}
+  m_LocalScale: {x: 0.0100000035, y: 0.009999998, z: 0.0100000035}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 8599987515042751844}
+  m_Father: {fileID: 4252551133283149353}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3837478678445895924
 GameObject:
@@ -1264,8 +1329,7 @@ Transform:
   m_LocalScale: {x: 100, y: 100, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2257970109529892331}
-  - {fileID: 3019104793253584866}
+  - {fileID: 6689766738518946090}
   m_Father: {fileID: 7105162563793981822}
   m_LocalEulerAnglesHint: {x: 40, y: 90, z: 90}
 --- !u!33 &4276137552199898927
@@ -1351,14 +1415,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4991596864431369550}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0.42261827, z: 0, w: 0.9063079}
-  m_LocalPosition: {x: 0.00314, y: -0.000075086056, z: 0.00847}
+  m_LocalRotation: {x: -0.000000010850365, y: 0.27395588, z: -0.000000060756406, w: 0.9617423}
+  m_LocalPosition: {x: 0.006722122, y: -0.000075077856, z: 0.000076385215}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2498392288676683062}
-  m_Father: {fileID: 8599987515042751844}
-  m_LocalEulerAnglesHint: {x: 0, y: -50, z: 0}
+  - {fileID: 7185678831749639771}
+  m_Father: {fileID: 6689766738518946090}
+  m_LocalEulerAnglesHint: {x: 0, y: -55.052, z: 0}
 --- !u!33 &2008834083910785307
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -1622,13 +1686,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5474676975813182993}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.2588191, z: 0, w: 0.9659258}
-  m_LocalPosition: {x: 0.00562, y: -0.00024761408, z: 0.00159}
+  m_LocalRotation: {x: -0.00000021891822, y: 0.27047846, z: 0.00000007229506, w: 0.962726}
+  m_LocalPosition: {x: 0.0017384881, y: -0.00024762694, z: -0.0013224258}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4252551133283149353}
-  m_Father: {fileID: 2257970109529892331}
+  m_Father: {fileID: 7185678831749639771}
   m_LocalEulerAnglesHint: {x: 0, y: 30, z: 0}
 --- !u!33 &2951556861856917522
 MeshFilter:
@@ -2038,16 +2102,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GripperController
   holdPoint: {fileID: 3019104793253584866}
-  liftPivot: {fileID: 8599987515042751844}
-  liftLocalAxis: {x: 0, y: 0, z: 1}
-  raisedAngleDegrees: 35
+  liftPivot: {fileID: 6689766738518946090}
+  elbowPivot: {fileID: 7185678831749639771}
+  findPivotsByName: 1
+  autoDetectLiftAxis: 1
+  liftAxisInParentSpace: {x: 0, y: 0, z: 1}
+  autoDetectElbowAxis: 1
+  elbowAxisInParentSpace: {x: 0, y: 0, z: 1}
+  shoulderFoldAngleDegrees: 160
+  elbowFoldAngleDegrees: -180
   liftNormalizedSpeed: 0.6
   leftClawPivot: {fileID: 5101141683645095791}
   rightClawPivot: {fileID: 2153118340980006315}
   leftClawLocalAxis: {x: 0, y: 1, z: 0}
   rightClawLocalAxis: {x: 0, y: 1, z: 0}
-  leftClosedAngleDegrees: 15
-  rightClosedAngleDegrees: -15
+  leftClosedAngleDegrees: 25
+  rightClosedAngleDegrees: -25
   gripNormalizedSpeed: 3
   liftNormalized: 0
   gripNormalized: 0
@@ -2105,8 +2175,6 @@ MonoBehaviour:
   gripperController: {fileID: 53475963758593267}
   arenaController: {fileID: 8183862508645542294}
   hasBall: 0
-  gripperLeftClaw: {fileID: 0}
-  gripperRightClaw: {fileID: 0}
   gripperCaptureRadius: 0.08
   cameraYawLimitDegrees: 90
   cameraTurnSpeedDegrees: 50

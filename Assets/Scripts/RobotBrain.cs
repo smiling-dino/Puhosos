@@ -334,7 +334,7 @@ public class RobotBrain : Agent
             : 0f;
         sensor.AddObservation(cameraYawNorm);                                              // 9. Поворот камеры относительно корпуса
         sensor.AddObservation(IsHoldingBall() ? 1.0f : 0.0f);                             // 10. Подтверждённый захват
-        sensor.AddObservation(gripperController != null ? gripperController.LiftNormalized : 0f); // 11. Высота подъёма
+        sensor.AddObservation(gripperController != null ? gripperController.LiftNormalized : 0f); // 11. Степень складывания руки
         sensor.AddObservation(trackController != null ? trackController.ForwardPwmNormalized : 0f); // 12. Фактическое движение
         sensor.AddObservation(trackController != null ? trackController.TurnPwmNormalized : 0f);    // 13. Фактический поворот
         sensor.AddObservation(Mathf.Clamp01(
@@ -344,7 +344,7 @@ public class RobotBrain : Agent
             gripperController != null
                 ? gripperController.GripNormalized
                 : 0f
-        );; // 15. Состояние клешни
+        ); // 15. Состояние клешни
     }
 
     public override void OnActionReceived(ActionBuffers actions)
@@ -356,7 +356,7 @@ public class RobotBrain : Agent
         float cameraTurn = Mathf.Clamp(delayedActions.z, -1f, 1f);
 
         int gripperAction = actions.DiscreteActions[0];
-        int liftAction = actions.DiscreteActions.Length > 1 ? actions.DiscreteActions[1] : 0;
+        int foldAction = actions.DiscreteActions.Length > 1 ? actions.DiscreteActions[1] : 0;
         bool holdingBeforeAction = IsHoldingBall();
         if (holdingBeforeAction)
         {
@@ -383,17 +383,17 @@ public class RobotBrain : Agent
                 * Quaternion.Euler(0f, cameraYawDegrees, 0f);
         }
 
-        // 2. Считывание дискретного действия (Клешня)
+        // 2. Дискретные ветви: клешня и согласованное складывание плеча с локтем
         ExecuteGripperAction(gripperAction);
         TryCompletePendingGrasp();
-        int appliedLiftAction = IsHoldingBall() ? liftAction : 0;
+        int appliedFoldAction = IsHoldingBall() ? foldAction : 0;
         if (gripperController != null)
         {
-            gripperController.SetLiftAction(appliedLiftAction);
+            gripperController.SetLiftAction(appliedFoldAction);
         }
 
         // 3. Расчет наград
-        CalculateRewards(cameraTurn, appliedLiftAction == 1 ? 1f : appliedLiftAction == 2 ? -1f : 0f);
+        CalculateRewards(cameraTurn, appliedFoldAction == 1 ? 1f : appliedFoldAction == 2 ? -1f : 0f);
     }
 
     public override void WriteDiscreteActionMask(IDiscreteActionMask actionMask)
@@ -406,9 +406,9 @@ public class RobotBrain : Agent
         actionMask.SetActionEnabled(0, 1, !gripperController.IsClosed);
         actionMask.SetActionEnabled(0, 2, gripperController.IsClosed);
 
-        bool canMoveLift = IsHoldingBall() && gripperController.HasLiftActuator;
-        actionMask.SetActionEnabled(1, 1, canMoveLift && !gripperController.IsAtLiftTop);
-        actionMask.SetActionEnabled(1, 2, canMoveLift && !gripperController.IsAtLiftBottom);
+        bool canFoldArm = IsHoldingBall() && gripperController.HasLiftActuator;
+        actionMask.SetActionEnabled(1, 1, canFoldArm && !gripperController.IsAtLiftTop);
+        actionMask.SetActionEnabled(1, 2, canFoldArm && !gripperController.IsAtLiftBottom);
     }
 
     private void ExecuteGripperAction(int actionID)
@@ -602,6 +602,10 @@ public class RobotBrain : Agent
             Academy.Instance.StatsRecorder.Add("GFSX/CaptureReady", IsBallCaptureReady() ? 1f : 0f);
             Academy.Instance.StatsRecorder.Add("GFSX/CaptureDistance", GetBallCaptureDistance());
             Academy.Instance.StatsRecorder.Add("GFSX/LiftHeight", GetCurrentBallLiftHeight());
+            Academy.Instance.StatsRecorder.Add(
+                "GFSX/ArmFoldNormalized",
+                gripperController != null ? gripperController.LiftNormalized : 0f
+            );
             Academy.Instance.StatsRecorder.Add("GFSX/TaskStage", (float)taskStage);
         }
     }
@@ -662,22 +666,23 @@ public class RobotBrain : Agent
     {
         taskStage = TaskStage.Holding;
         float ballHeightPotential =
-        requiredLiftHeightMeters > 0f
-            ? Mathf.Clamp01(
-                GetCurrentBallLiftHeight()
-                / requiredLiftHeightMeters
-            )
-            : 1f;
+            requiredLiftHeightMeters > 0f
+                ? Mathf.Clamp01(
+                    GetCurrentBallLiftHeight()
+                    / requiredLiftHeightMeters
+                )
+                : 1f;
 
-    float actuatorPotential =
-        gripperController != null
-            ? gripperController.LiftNormalized
-            : 0f;
+        float actuatorPotential =
+            gripperController != null
+                ? gripperController.LiftNormalized
+                : 0f;
 
-    float liftPotential = Mathf.Min(
-        ballHeightPotential,
-        actuatorPotential
-);
+        // Успех возможен только при фактическом подъёме мяча и полном складывании в «Г».
+        float liftPotential = Mathf.Min(
+            ballHeightPotential,
+            actuatorPotential
+        );
         float liftReward = Mathf.Clamp(
             liftPotentialWeight * (liftPotential - previousLiftPotential),
             -liftPotentialMaxPerDecision,
