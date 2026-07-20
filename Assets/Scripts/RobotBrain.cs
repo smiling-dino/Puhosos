@@ -131,7 +131,7 @@ public class RobotBrain : Agent
     private float previousCameraAction = 0f;
     private float previousLiftAction = 0f;
     private float lastCollisionPenaltyTime = float.NegativeInfinity;
-    private readonly HashSet<int> activeSideCollisionIds = new HashSet<int>();
+    private readonly HashSet<EntityId> activeSideCollisionIds = new HashSet<EntityId>();
     private bool initialBallVisible = false;
     private bool previousRewardBallVisible = false;
     private bool firstAcquisitionAwarded = false;
@@ -914,7 +914,7 @@ public class RobotBrain : Agent
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (!TryGetSideCollisionId(collision, out int collisionId))
+        if (!TryGetSideCollisionId(collision, out EntityId collisionId))
         {
             return;
         }
@@ -937,7 +937,7 @@ public class RobotBrain : Agent
 
     private void OnCollisionStay(Collision collision)
     {
-        if (TryGetSideCollisionId(collision, out int collisionId))
+        if (TryGetSideCollisionId(collision, out EntityId collisionId))
         {
             activeSideCollisionIds.Add(collisionId);
             return;
@@ -946,7 +946,7 @@ public class RobotBrain : Agent
         // Контакт мог измениться с бокового на опорный без события Exit.
         if (collision != null && collision.collider != null)
         {
-            activeSideCollisionIds.Remove(collision.collider.GetInstanceID());
+            activeSideCollisionIds.Remove(collision.collider.GetEntityId());
         }
     }
 
@@ -957,14 +957,14 @@ public class RobotBrain : Agent
             return;
         }
 
-        activeSideCollisionIds.Remove(collision.collider.GetInstanceID());
+        activeSideCollisionIds.Remove(collision.collider.GetEntityId());
     }
 
     private bool TryGetSideCollisionId(
         Collision collision,
-        out int collisionId)
+        out EntityId collisionId)
     {
-        collisionId = 0;
+        collisionId = EntityId.None;
         if (collision == null
             || collision.collider == null
             || collision.transform == null
@@ -982,7 +982,7 @@ public class RobotBrain : Agent
                     contact.normal.normalized,
                     Vector3.up)) < 0.7f)
             {
-                collisionId = collision.collider.GetInstanceID();
+                collisionId = collision.collider.GetEntityId();
                 return true;
             }
         }
