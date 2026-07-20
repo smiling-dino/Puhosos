@@ -114,6 +114,7 @@ public class RobotBrain : Agent
     private int burstDropoutRemaining = 0;
     private int currentActionLatency = 0;
     private bool captureAttemptPending = false;
+    private bool captureAttemptReported = false;
     private readonly Queue<Vector3> actionBuffer = new Queue<Vector3>();
 
     private TaskStage taskStage = TaskStage.Search;
@@ -223,6 +224,7 @@ public class RobotBrain : Agent
         }
 
         captureAttemptPending = false;
+        captureAttemptReported = false;
 
         hasBall = false;
         lastKnownBallDirection = 0f;
@@ -422,10 +424,12 @@ public class RobotBrain : Agent
         {
             gripperController.SetClosed(true);
             captureAttemptPending = true;
+            captureAttemptReported = false;
         }
         else if (actionID == 2 && gripperController.IsClosed)
         {
             captureAttemptPending = false;
+            captureAttemptReported = false;
 
             gripperController.SetLiftAction(0);
             gripperController.ReleaseBall();
@@ -444,10 +448,9 @@ public class RobotBrain : Agent
             return;
         }
 
-        captureAttemptPending = false;
         bool captureReady = IsBallCaptureReady();
 
-        if (Academy.Instance.IsCommunicatorOn)
+        if (!captureAttemptReported && Academy.Instance.IsCommunicatorOn)
         {
             Academy.Instance.StatsRecorder.Add(
                 "GFSX/CaptureAttempts",
@@ -465,6 +468,15 @@ public class RobotBrain : Agent
                 GetBallCaptureDistance()
             );
         }
+        captureAttemptReported = true;
+
+        if (!captureReady)
+        {
+            return;
+        }
+
+        captureAttemptPending = false;
+        captureAttemptReported = false;
 
         TryCaptureBall(captureReady);
     }
@@ -528,12 +540,8 @@ public class RobotBrain : Agent
             return true;
         }
 
-        if (hardwareSensors != null)
-        {
-            return hardwareSensors.isBallInGripper;
-        }
-
-        return GetBallCaptureDistance() <= gripperCaptureRadius;
+        return (hardwareSensors != null && hardwareSensors.isBallInGripper)
+            || GetBallCaptureDistance() <= gripperCaptureRadius;
     }
 
     private float GetBallCaptureDistance()
