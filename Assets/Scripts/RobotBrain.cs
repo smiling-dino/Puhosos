@@ -47,22 +47,23 @@ public class RobotBrain : Agent
     [Header("Reward Budget")]
     [SerializeField] private float timePenaltyPerDecision = 0.0005f;
     [SerializeField] private float distancePotentialWeight = 0.30f;
-    [SerializeField] private float distancePotentialMaxPerDecision = 0.03f;
     [SerializeField] private float bodyAlignmentPotentialWeight = 0.05f;
-    [SerializeField] private float alignmentPotentialMaxPerDecision = 0.01f;
     [SerializeField] private float firstAcquisitionReward = 0.05f;
     [SerializeField] private float captureZoneReward = 0.10f;
     [SerializeField] private float confirmedGraspReward = 0.25f;
+    [SerializeField] private float foldPotentialWeight = 0.05f;
     [SerializeField] private float liftPotentialWeight = 0.15f;
-    [SerializeField] private float liftPotentialMaxPerDecision = 0.03f;
     [SerializeField] private float terminalSuccessReward = 1.0f;
-    [SerializeField] private float ballLostBeforeCapturePenalty = -0.25f;
+    [SerializeField] private float failedGraspPenalty = -0.02f;
+    [SerializeField] private float ballLostBeforeCapturePenalty = -1.0f;
     [SerializeField] private float droppedBallPenalty = -1.0f;
     [SerializeField] private float fallOrFlipPenalty = -1.0f;
 
     [Header("Safety & Control Regularization")]
-    [SerializeField] private float ordinaryCollisionPenalty = -0.02f;
+    [SerializeField] private float ordinaryCollisionPenalty = -0.10f;
+    [SerializeField] private float sustainedCollisionPenaltyPerDecision = -0.002f;
     [SerializeField] private float collisionPenaltyCooldownSeconds = 0.5f;
+    [SerializeField] private float reverseMotionPenaltyScale = 0.0003f;
     [SerializeField] private float wheelEffortPenaltyScale = 0.00025f;
     [SerializeField] private float cameraEffortPenaltyScale = 0.00002f;
     [SerializeField] private float liftEffortPenaltyScale = 0.00002f;
@@ -122,6 +123,7 @@ public class RobotBrain : Agent
     private float cameraYawDegrees = 0f;
     private float previousDistancePotential = 0f;
     private float previousAlignmentPotential = 0f;
+    private float previousFoldPotential = 0f;
     private float previousLiftPotential = 0f;
     private float liftStartBallY = 0f;
     private float previousLeftPwm = 0f;
@@ -129,6 +131,7 @@ public class RobotBrain : Agent
     private float previousCameraAction = 0f;
     private float previousLiftAction = 0f;
     private float lastCollisionPenaltyTime = float.NegativeInfinity;
+    private readonly HashSet<int> activeSideCollisionIds = new HashSet<int>();
     private bool initialBallVisible = false;
     private bool previousRewardBallVisible = false;
     private bool firstAcquisitionAwarded = false;
@@ -237,6 +240,7 @@ public class RobotBrain : Agent
         cameraYawDegrees = 0f;
         previousDistancePotential = 0f;
         previousAlignmentPotential = 0f;
+        previousFoldPotential = 0f;
         previousLiftPotential = 0f;
         liftStartBallY = 0f;
         previousLeftPwm = 0f;
@@ -244,6 +248,7 @@ public class RobotBrain : Agent
         previousCameraAction = 0f;
         previousLiftAction = 0f;
         lastCollisionPenaltyTime = float.NegativeInfinity;
+        activeSideCollisionIds.Clear();
         initialBallVisible = false;
         previousRewardBallVisible = false;
         firstAcquisitionAwarded = false;
@@ -395,7 +400,11 @@ public class RobotBrain : Agent
         }
 
         // 3. Расчет наград
-        CalculateRewards(cameraTurn, appliedFoldAction == 1 ? 1f : appliedFoldAction == 2 ? -1f : 0f);
+        CalculateRewards(
+            gasNormalized,
+            cameraTurn,
+            appliedFoldAction == 1 ? 1f : appliedFoldAction == 2 ? -1f : 0f
+        );
     }
 
     public override void WriteDiscreteActionMask(IDiscreteActionMask actionMask)
@@ -406,7 +415,13 @@ public class RobotBrain : Agent
         }
 
         actionMask.SetActionEnabled(0, 1, !gripperController.IsClosed);
-        actionMask.SetActionEnabled(0, 2, gripperController.IsClosed);
+        // После подтверждённого захвата отпускать мяч до завершения задачи нельзя.
+        // Это удаляет заведомо неправильную стратегию "схватить и сразу бросить".
+        actionMask.SetActionEnabled(
+            0,
+            2,
+            gripperController.IsClosed && !IsHoldingBall()
+        );
 
         bool canFoldArm = IsHoldingBall() && gripperController.HasLiftActuator;
         actionMask.SetActionEnabled(1, 1, canFoldArm && !gripperController.IsAtLiftTop);
@@ -426,7 +441,9 @@ public class RobotBrain : Agent
             captureAttemptPending = true;
             captureAttemptReported = false;
         }
-        else if (actionID == 2 && gripperController.IsClosed)
+        else if (actionID == 2
+            && gripperController.IsClosed
+            && !IsHoldingBall())
         {
             captureAttemptPending = false;
             captureAttemptReported = false;
@@ -478,6 +495,19 @@ public class RobotBrain : Agent
         captureAttemptPending = false;
         captureAttemptReported = false;
 
+        if (!captureReady)
+        {
+            AddTrackedReward(failedGraspPenalty, "FailedGrasp");
+            if (Academy.Instance.IsCommunicatorOn)
+            {
+                Academy.Instance.StatsRecorder.Add(
+                    "GFSX/FailedGraspAttempts",
+                    1f,
+                    StatAggregationMethod.Sum
+                );
+            }
+        }
+
         TryCaptureBall(captureReady);
     }
 
@@ -504,6 +534,7 @@ public class RobotBrain : Agent
         everCapturedBall = true;
         taskStage = TaskStage.Holding;
         liftStartBallY = GetBallYForMetrics();
+        previousFoldPotential = 0f;
         previousLiftPotential = 0f;
         stableLiftDecisionCount = 0;
 
@@ -560,7 +591,10 @@ public class RobotBrain : Agent
         return gripperController.GetDistanceToHoldPoint(ballTransform.gameObject);
     }
 
-    private void CalculateRewards(float cameraAction, float liftAction)
+    private void CalculateRewards(
+        float driveAction,
+        float cameraAction,
+        float liftAction)
     {
         float currentDistance = GetDistanceToBall();
         bool holdingBall = IsHoldingBall();
@@ -591,7 +625,7 @@ public class RobotBrain : Agent
         }
 
         AddTrackedReward(-timePenaltyPerDecision, "Time");
-        ApplyControlRegularization(cameraAction, liftAction);
+        ApplyControlRegularization(driveAction, cameraAction, liftAction);
 
         if (holdingBall)
         {
@@ -620,13 +654,21 @@ public class RobotBrain : Agent
 
     private void ApplyApproachRewards()
     {
+        bool captureReady = IsBallCaptureReady();
         float distancePotential = GetDistancePotential();
-        float distanceReward = Mathf.Clamp(
-            distancePotentialWeight * (distancePotential - previousDistancePotential),
-            -distancePotentialMaxPerDecision,
-            distancePotentialMaxPerDecision
-        );
-        AddTrackedReward(distanceReward, "DistancePotential");
+        float distanceDelta = distancePotential - previousDistancePotential;
+
+        // Положительный прогресс учитывается только тогда, когда агент действительно
+        // наблюдает мяч (либо уже дошёл до ИК-зоны захвата). Отдаление штрафуется
+        // всегда. Поэтому скрытое положение мяча не превращается в "GPS-награду",
+        // а потеря видимости не позволяет бесплатно отойти и снова подойти.
+        if (distanceDelta <= 0f || lastObservedBallVisible || captureReady)
+        {
+            AddTrackedReward(
+                distancePotentialWeight * distanceDelta,
+                "DistancePotential"
+            );
+        }
         previousDistancePotential = distancePotential;
 
         if (!initialBallVisible
@@ -638,28 +680,23 @@ public class RobotBrain : Agent
             firstAcquisitionAwarded = true;
         }
 
-        bool captureReady = IsBallCaptureReady();
-        if (lastObservedBallVisible)
-        {
-            taskStage = captureReady ? TaskStage.CaptureReady : TaskStage.Approach;
-            float alignmentPotential = GetBodyAlignmentPotential();
-            if (previousRewardBallVisible)
-            {
-                float alignmentReward = Mathf.Clamp(
-                    bodyAlignmentPotentialWeight * (alignmentPotential - previousAlignmentPotential),
-                    -alignmentPotentialMaxPerDecision,
-                    alignmentPotentialMaxPerDecision
-                );
-                AddTrackedReward(alignmentReward, "BodyAlignmentPotential");
-            }
+        taskStage = captureReady
+            ? TaskStage.CaptureReady
+            : lastObservedBallVisible
+                ? TaskStage.Approach
+                : TaskStage.Search;
 
-            previousAlignmentPotential = alignmentPotential;
-        }
-        else
-        {
-            taskStage = captureReady ? TaskStage.CaptureReady : TaskStage.Search;
-            previousAlignmentPotential = 0f;
-        }
+        // Невидимый мяч соответствует нулевому потенциалу. Потеря и повторное
+        // обнаружение поэтому взаимно компенсируются и не дают фармить alignment.
+        float alignmentPotential = lastObservedBallVisible
+            ? GetBodyAlignmentPotential()
+            : 0f;
+        AddTrackedReward(
+            bodyAlignmentPotentialWeight
+                * (alignmentPotential - previousAlignmentPotential),
+            "BodyAlignmentPotential"
+        );
+        previousAlignmentPotential = alignmentPotential;
 
         previousRewardBallVisible = lastObservedBallVisible;
 
@@ -686,17 +723,26 @@ public class RobotBrain : Agent
                 ? gripperController.LiftNormalized
                 : 0f;
 
-        // Успех возможен только при фактическом подъёме мяча и полном складывании в «Г».
+        // Маленькая потенциальная награда явно обучает команде складывания двух
+        // шарниров. Обратное раскладывание возвращает её назад, поэтому колебания
+        // руки не могут создавать положительную награду.
+        AddTrackedReward(
+            foldPotentialWeight
+                * (actuatorPotential - previousFoldPotential),
+            "FoldPotential"
+        );
+        previousFoldPotential = actuatorPotential;
+
+        // Основной прогресс требует одновременно реальной высоты мяча и полного
+        // складывания обоих шарниров в букву Z.
         float liftPotential = Mathf.Min(
             ballHeightPotential,
             actuatorPotential
         );
-        float liftReward = Mathf.Clamp(
+        AddTrackedReward(
             liftPotentialWeight * (liftPotential - previousLiftPotential),
-            -liftPotentialMaxPerDecision,
-            liftPotentialMaxPerDecision
+            "LiftPotential"
         );
-        AddTrackedReward(liftReward, "LiftPotential");
         previousLiftPotential = liftPotential;
 
         if (liftPotential >= 1f)
@@ -717,18 +763,38 @@ public class RobotBrain : Agent
         SetTerminalReward(terminalSuccessReward, "Success");
     }
 
-    private void ApplyControlRegularization(float cameraAction, float liftAction)
+    private void ApplyControlRegularization(
+        float driveAction,
+        float cameraAction,
+        float liftAction)
     {
         float leftPwm = trackController != null ? trackController.LeftPwmNormalized : 0f;
         float rightPwm = trackController != null ? trackController.RightPwmNormalized : 0f;
 
         float effortPenalty = wheelEffortPenaltyScale * (leftPwm * leftPwm + rightPwm * rightPwm);
-        if (lastObservedBallVisible)
-        {
-            effortPenalty += cameraEffortPenaltyScale * cameraAction * cameraAction;
-        }
+        effortPenalty += cameraEffortPenaltyScale * cameraAction * cameraAction;
         effortPenalty += liftEffortPenaltyScale * liftAction * liftAction;
         AddTrackedReward(-effortPenalty, "ControlEffort");
+
+        // Короткий откат остаётся возможным, но постоянная езда назад больше не
+        // является способом избежать фронтального ультразвукового штрафа.
+        float reverseCommand = Mathf.Max(0f, -driveAction);
+        AddTrackedReward(
+            -reverseMotionPenaltyScale * reverseCommand * reverseCommand,
+            "ReverseMotion"
+        );
+
+        if (Academy.Instance.IsCommunicatorOn)
+        {
+            Academy.Instance.StatsRecorder.Add(
+                "GFSX/ReverseCommand",
+                reverseCommand
+            );
+            Academy.Instance.StatsRecorder.Add(
+                "GFSX/ActiveSideContacts",
+                activeSideCollisionIds.Count
+            );
+        }
 
         float smoothnessPenalty = wheelSmoothnessPenaltyScale
             * (Mathf.Abs(leftPwm - previousLeftPwm) + Mathf.Abs(rightPwm - previousRightPwm));
@@ -744,6 +810,14 @@ public class RobotBrain : Agent
             );
             float movingTowardObstacle = Mathf.Max(0f, trackController.ForwardPwmNormalized);
             AddTrackedReward(-dangerPenaltyScale * danger * movingTowardObstacle, "ApproachingObstacle");
+        }
+
+        if (activeSideCollisionIds.Count > 0)
+        {
+            AddTrackedReward(
+                sustainedCollisionPenaltyPerDecision,
+                "SustainedCollision"
+            );
         }
 
         previousLeftPwm = leftPwm;
@@ -840,25 +914,15 @@ public class RobotBrain : Agent
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision == null
-            || collision.transform == null
-            || HasTagInParents(collision.transform, "TargetBall")
-            || Time.time - lastCollisionPenaltyTime < collisionPenaltyCooldownSeconds)
+        if (!TryGetSideCollisionId(collision, out int collisionId))
         {
             return;
         }
 
-        bool hasSideContact = false;
-        foreach (ContactPoint contact in collision.contacts)
-        {
-            if (Mathf.Abs(Vector3.Dot(contact.normal.normalized, Vector3.up)) < 0.7f)
-            {
-                hasSideContact = true;
-                break;
-            }
-        }
+        activeSideCollisionIds.Add(collisionId);
 
-        if (!hasSideContact)
+        if (Time.time - lastCollisionPenaltyTime
+            < collisionPenaltyCooldownSeconds)
         {
             return;
         }
@@ -869,6 +933,61 @@ public class RobotBrain : Agent
         {
             Academy.Instance.StatsRecorder.Add("GFSX/CollisionCount", 1f, StatAggregationMethod.Sum);
         }
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        if (TryGetSideCollisionId(collision, out int collisionId))
+        {
+            activeSideCollisionIds.Add(collisionId);
+            return;
+        }
+
+        // Контакт мог измениться с бокового на опорный без события Exit.
+        if (collision != null && collision.collider != null)
+        {
+            activeSideCollisionIds.Remove(collision.collider.GetInstanceID());
+        }
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        if (collision == null || collision.collider == null)
+        {
+            return;
+        }
+
+        activeSideCollisionIds.Remove(collision.collider.GetInstanceID());
+    }
+
+    private bool TryGetSideCollisionId(
+        Collision collision,
+        out int collisionId)
+    {
+        collisionId = 0;
+        if (collision == null
+            || collision.collider == null
+            || collision.transform == null
+            || HasTagInParents(collision.transform, "TargetBall"))
+        {
+            return false;
+        }
+
+        for (int contactIndex = 0;
+            contactIndex < collision.contactCount;
+            contactIndex++)
+        {
+            ContactPoint contact = collision.GetContact(contactIndex);
+            if (Mathf.Abs(Vector3.Dot(
+                    contact.normal.normalized,
+                    Vector3.up)) < 0.7f)
+            {
+                collisionId = collision.collider.GetInstanceID();
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private float GetDistanceToBall()

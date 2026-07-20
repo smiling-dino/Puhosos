@@ -2231,20 +2231,21 @@ MonoBehaviour:
   maxBallDropBelowArena: 1
   timePenaltyPerDecision: 0.0005
   distancePotentialWeight: 0.3
-  distancePotentialMaxPerDecision: 0.03
   bodyAlignmentPotentialWeight: 0.05
-  alignmentPotentialMaxPerDecision: 0.01
   firstAcquisitionReward: 0.05
   captureZoneReward: 0.1
   confirmedGraspReward: 0.25
+  foldPotentialWeight: 0.05
   liftPotentialWeight: 0.15
-  liftPotentialMaxPerDecision: 0.03
   terminalSuccessReward: 1
-  ballLostBeforeCapturePenalty: -0.25
+  failedGraspPenalty: -0.02
+  ballLostBeforeCapturePenalty: -1
   droppedBallPenalty: -1
   fallOrFlipPenalty: -1
-  ordinaryCollisionPenalty: -0.02
+  ordinaryCollisionPenalty: -0.1
+  sustainedCollisionPenaltyPerDecision: -0.002
   collisionPenaltyCooldownSeconds: 0.5
+  reverseMotionPenaltyScale: 0.0003
   wheelEffortPenaltyScale: 0.00025
   cameraEffortPenaltyScale: 0.00002
   liftEffortPenaltyScale: 0.00002

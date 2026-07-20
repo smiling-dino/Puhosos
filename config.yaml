@@ -6,25 +6,29 @@ environment_parameters:
     curriculum:
       - name: grasp_and_lift
         completion_criteria:
-          measure: progress
+          # Переходим дальше только после обучения успешному Z-подъёму,
+          # а не после прохождения фиксированной доли max_steps.
+          measure: reward
           behavior: GFSX_Brain
           signal_smoothing: true
           min_lesson_length: 100
-          threshold: 0.20
+          # Без терминального успеха суммарный положительный бюджет < 0.95,
+          # поэтому 1.0 нельзя пройти одним лишь shaping-прогрессом.
+          threshold: 1.00
           require_reset: true
         value: 1.0
       - name: guided_search
         completion_criteria:
-          measure: progress
+          measure: reward
           behavior: GFSX_Brain
           signal_smoothing: true
           min_lesson_length: 100
-          threshold: 0.45
+          threshold: 0.80
           require_reset: true
         value: 0.7
       - name: mixed_search
         completion_criteria:
-          measure: progress
+          measure: reward
           behavior: GFSX_Brain
           signal_smoothing: true
           min_lesson_length: 100
