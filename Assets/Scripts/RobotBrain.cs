@@ -277,35 +277,42 @@ public class RobotBrain : Agent
 
     private void CalculateRewards(float gas, float steer)
     {
+        float distanceDeltaCoeff = 0.5f;
+        float centerDiffCoeff = 0.01f;
+        float jerkCoeff = 0.01f;
+        float closeWallPenalty = -0.02f;
+        float ballReward = 30.0f;
+        float overturnPenalty = -1f;
+
         float currentDistance = GetDistanceToBall();
         float distanceDelta = previousDistanceToBall - currentDistance;
         
         if (distanceDelta > 0)
         {
             float multiplier = currentDistance < 0.5f ? 2.0f : 1.0f;
-            AddReward(distanceDelta * multiplier * 0.5f);
+            AddReward(distanceDelta * multiplier * distanceDeltaCoeff);
         }
         previousDistanceToBall = currentDistance;
 
         if (yoloCamera.IsBallVisible())
         {
             float centerDiff = Mathf.Abs(yoloCamera.GetNormalizedHorizontalAngle());
-            AddReward((1.0f - centerDiff) * 0.01f);
+            AddReward((1.0f - centerDiff) * centerDiffCoeff);
         }
 
         float gasJerk = Mathf.Abs(gas - lastGasAction);
         float steerJerk = Mathf.Abs(steer - lastSteerAction);
-        AddReward(-(gasJerk + steerJerk) * 0.005f);
+        AddReward(-(gasJerk + steerJerk) * jerkCoeff);
 
         // Штраф за опасное сближение со стенами
         if (hardwareSensors.ultrasoundValue < 0.2f || hardwareSensors.leftIRObstacle == 1 || hardwareSensors.rightIRObstacle == 1)
         {
-            AddReward(-0.02f);
+            AddReward(closeWallPenalty);
         }
 
         if (hasBall)
         {
-            SetReward(5.0f);
+            SetReward(ballReward);
             EndEpisode();
         }
 
@@ -315,13 +322,13 @@ public class RobotBrain : Agent
 
         if (transform.localPosition.y < -1f || tiltX > 45f || tiltZ > 45f)
         {
-            SetReward(-1f);
+            SetReward(overturnPenalty);
             EndEpisode();
             return;
         }
         if (hasBall)
         {
-            AddReward(5f);
+            AddReward(ballReward);
             EndEpisode();
             return;
         }
