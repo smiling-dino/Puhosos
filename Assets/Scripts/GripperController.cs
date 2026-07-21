@@ -65,8 +65,8 @@ public class GripperController : MonoBehaviour
     private float gripNormalizedSpeed = 3f;
 
     [Header("=== Физическое удержание мяча ===")]
-    [SerializeField, Min(0.1f)] private float holdJointBreakForce = 35f;
-    [SerializeField, Min(0.1f)] private float holdJointBreakTorque = 12f;
+    [SerializeField, Min(0.1f)] private float holdJointBreakForce = 250f;
+    [SerializeField, Min(0.1f)] private float holdJointBreakTorque = 80f;
     [SerializeField] private bool ignoreRobotCollisionsWhileHeld = true;
 
     [Header("=== Текущее состояние ===")]
@@ -367,8 +367,8 @@ public class GripperController : MonoBehaviour
 
         if (holdJoint == null)
         {
-            // Соединение разрушилось из-за физической нагрузки: мяч остаётся
-            // динамическим, а RobotBrain завершает эпизод штрафом за потерю.
+            // Соединение разрушилось из-за физической нагрузки. Мяч остаётся
+            // динамическим, а RobotBrain разрешает повторить захват.
             DetachHeldBall(false);
         }
     }

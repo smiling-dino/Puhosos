@@ -32,13 +32,14 @@ public class RobotBrain : Agent
 
     [Header("Gripper Simulation")]
     [SerializeField] private bool hasBall = false;
-    [SerializeField] private float gripperCaptureRadius = 0.08f;
+    [SerializeField] private float gripperCaptureRadius = 0.10f;
 
     [Header("Camera Motion")]
     [SerializeField] private float cameraYawLimitDegrees = 90f;
     [SerializeField] private float cameraTurnSpeedDegrees = 50f;
 
     [Header("Task Completion")]
+    [SerializeField, Min(1)] private int requiredStableGraspPhysicsSteps = 8;
     [SerializeField] private float requiredLiftHeightMeters = 0.08f;
     [SerializeField] private int requiredStableLiftDecisions = 10;
     [SerializeField] private float targetStopDistanceMeters = 0.45f;
@@ -71,7 +72,7 @@ public class RobotBrain : Agent
     [SerializeField] private float terminalSuccessReward = 1.0f;
     [SerializeField] private float failedGraspPenalty = -0.03f;
     [SerializeField] private float ballLostBeforeCapturePenalty = -1.0f;
-    [SerializeField] private float droppedBallPenalty = -1.0f;
+    [SerializeField] private float droppedBallPenalty = -0.25f;
     [SerializeField] private float fallOrFlipPenalty = -1.0f;
     [SerializeField] private float timeoutPenalty = -0.5f;
 
@@ -158,6 +159,8 @@ public class RobotBrain : Agent
     private int currentActionLatency = 0;
     private bool captureAttemptPending = false;
     private bool captureAttemptReported = false;
+    private bool graspConfirmationPending = false;
+    private int stableGraspPhysicsStepCount = 0;
     private readonly Queue<Vector3> actionBuffer = new Queue<Vector3>();
 
     private TaskStage taskStage = TaskStage.Search;
@@ -181,6 +184,8 @@ public class RobotBrain : Agent
     private bool firstAcquisitionAwarded = false;
     private bool captureZoneAwarded = false;
     private bool confirmedGraspAwarded = false;
+    private bool liftCompletedAwarded = false;
+    private bool recoveryModeAfterDrop = false;
     private bool everCapturedBall = false;
     private bool liftCompleted = false;
     private int stableLiftDecisionCount = 0;
@@ -297,6 +302,8 @@ public class RobotBrain : Agent
 
         captureAttemptPending = false;
         captureAttemptReported = false;
+        graspConfirmationPending = false;
+        stableGraspPhysicsStepCount = 0;
 
         hasBall = false;
         lastKnownBallDirection = 0f;
@@ -325,6 +332,8 @@ public class RobotBrain : Agent
         firstAcquisitionAwarded = false;
         captureZoneAwarded = false;
         confirmedGraspAwarded = false;
+        liftCompletedAwarded = false;
+        recoveryModeAfterDrop = false;
         everCapturedBall = false;
         liftCompleted = false;
         stableLiftDecisionCount = 0;
@@ -429,7 +438,7 @@ public class RobotBrain : Agent
             ? Mathf.Clamp(cameraYawDegrees / cameraYawLimitDegrees, -1f, 1f)
             : 0f;
         sensor.AddObservation(cameraYawNorm);                                              // 9. Поворот камеры относительно корпуса
-        sensor.AddObservation(IsHoldingBall() ? 1.0f : 0.0f);                             // 10. Подтверждённый захват
+        sensor.AddObservation(HasConfirmedGrasp() ? 1.0f : 0.0f);                        // 10. Подтверждённый захват
         sensor.AddObservation(gripperController != null ? gripperController.LiftNormalized : 0f); // 11. Степень складывания руки
         sensor.AddObservation(trackController != null ? trackController.ForwardPwmNormalized : 0f); // 12. Фактическое движение
         sensor.AddObservation(trackController != null ? trackController.TurnPwmNormalized : 0f);    // 13. Фактический поворот
@@ -481,7 +490,7 @@ public class RobotBrain : Agent
         // 2. Дискретные ветви: клешня и согласованное складывание плеча с локтем
         ExecuteGripperAction(gripperAction);
         TryCompletePendingGrasp();
-        int appliedFoldAction = IsHoldingBall() ? foldAction : 0;
+        int appliedFoldAction = HasConfirmedGrasp() ? foldAction : 0;
         if (gripperController != null)
         {
             gripperController.SetLiftAction(appliedFoldAction);
@@ -504,7 +513,11 @@ public class RobotBrain : Agent
             return;
         }
 
-        actionMask.SetActionEnabled(0, 1, !gripperController.IsClosed);
+        actionMask.SetActionEnabled(
+            0,
+            1,
+            !gripperController.IsClosed && gripperController.IsFullyOpen
+        );
         // После подтверждённого захвата отпускать мяч до завершения задачи нельзя.
         // Это удаляет заведомо неправильную стратегию "схватить и сразу бросить".
         actionMask.SetActionEnabled(
@@ -513,7 +526,7 @@ public class RobotBrain : Agent
             gripperController.IsClosed && !IsHoldingBall()
         );
 
-        bool canFoldArm = IsHoldingBall() && gripperController.HasLiftActuator;
+        bool canFoldArm = HasConfirmedGrasp() && gripperController.HasLiftActuator;
         actionMask.SetActionEnabled(1, 1, canFoldArm && !gripperController.IsAtLiftTop);
         actionMask.SetActionEnabled(
             1,
@@ -529,7 +542,9 @@ public class RobotBrain : Agent
             return;
         }
 
-        if (actionID == 1 && !gripperController.IsClosed)
+        if (actionID == 1
+            && !gripperController.IsClosed
+            && gripperController.IsFullyOpen)
         {
             gripperController.SetClosed(true);
             captureAttemptPending = true;
@@ -590,6 +605,7 @@ public class RobotBrain : Agent
         if (!captureReady)
         {
             captureAttemptPending = false;
+            gripperController.SetClosed(false);
             AddTrackedReward(failedGraspPenalty, "FailedGrasp");
             if (Academy.Instance.IsCommunicatorOn)
             {
@@ -624,11 +640,40 @@ public class RobotBrain : Agent
         gripperController.GrabBall(ballTransform.gameObject);
         if (!gripperController.IsHoldingBall())
         {
+            gripperController.SetClosed(false);
             return false;
         }
 
         hasBall = true;
+        graspConfirmationPending = true;
+        stableGraspPhysicsStepCount = 0;
+        taskStage = TaskStage.Holding;
+        return true;
+    }
+
+    private bool IsHoldingBall()
+    {
+        return gripperController != null
+            ? gripperController.IsHoldingBall()
+            : hasBall;
+    }
+
+    private bool HasConfirmedGrasp()
+    {
+        return everCapturedBall && IsHoldingBall();
+    }
+
+    private void ConfirmStableGrasp()
+    {
+        if (!graspConfirmationPending || !IsHoldingBall())
+        {
+            return;
+        }
+
+        graspConfirmationPending = false;
+        stableGraspPhysicsStepCount = 0;
         everCapturedBall = true;
+        hasBall = true;
         taskStage = TaskStage.Holding;
         liftStartBallY = GetBallYForMetrics();
         previousFoldPotential = 0f;
@@ -655,16 +700,88 @@ public class RobotBrain : Agent
 
         if (Academy.Instance.IsCommunicatorOn)
         {
-            Academy.Instance.StatsRecorder.Add("GFSX/CaptureSuccess", 1f, StatAggregationMethod.Sum);
+            Academy.Instance.StatsRecorder.Add(
+                "GFSX/CaptureSuccess",
+                1f,
+                StatAggregationMethod.Sum
+            );
         }
-        return true;
     }
 
-    private bool IsHoldingBall()
+    private void HandleUnstableGrasp()
     {
-        return gripperController != null
-            ? gripperController.IsHoldingBall()
-            : hasBall;
+        graspConfirmationPending = false;
+        stableGraspPhysicsStepCount = 0;
+        captureAttemptPending = false;
+        captureAttemptReported = false;
+        hasBall = false;
+
+        if (gripperController != null)
+        {
+            gripperController.SetLiftAction(0);
+            gripperController.ReleaseBall();
+            gripperController.SetClosed(false);
+        }
+
+        taskStage = TaskStage.Search;
+        previousDistancePotential = GetDistancePotential();
+        previousAlignmentPotential = 0f;
+        AddTrackedReward(failedGraspPenalty, "UnstableGrasp");
+
+        if (Academy.Instance.IsCommunicatorOn)
+        {
+            Academy.Instance.StatsRecorder.Add(
+                "GFSX/UnstableGrasps",
+                1f,
+                StatAggregationMethod.Sum
+            );
+        }
+    }
+
+    private void HandleRecoverableBallDrop(float currentDistance)
+    {
+        RecordBallLostMetrics(currentDistance);
+        AddTrackedReward(droppedBallPenalty, "DroppedBall");
+
+        graspConfirmationPending = false;
+        stableGraspPhysicsStepCount = 0;
+        captureAttemptPending = false;
+        captureAttemptReported = false;
+        everCapturedBall = false;
+        hasBall = false;
+        recoveryModeAfterDrop = true;
+        liftCompleted = false;
+        stableLiftDecisionCount = 0;
+        stableStopDecisionCount = 0;
+        previousFoldPotential = 0f;
+        previousLiftPotential = 0f;
+        previousTargetDistancePotential = 0f;
+        previousTargetAlignmentPotential = 0f;
+
+        if (gripperController != null)
+        {
+            gripperController.ReleaseBall();
+            gripperController.ResetMechanism();
+        }
+
+        taskStage = TaskStage.Search;
+        lastKnownBallDirection = 0f;
+        timeSinceLastDetection = 0f;
+        lastObservedBallVisible = false;
+        lastObservedBallAngle = 0f;
+        lastObservedBallDistance = 1f;
+        previousRewardBallVisible = false;
+        previousDistancePotential = GetDistancePotential();
+        previousAlignmentPotential = 0f;
+
+        if (Academy.Instance.IsCommunicatorOn)
+        {
+            Academy.Instance.StatsRecorder.Add(
+                "GFSX/RecoverableDrops",
+                1f,
+                StatAggregationMethod.Sum
+            );
+        }
     }
 
     private bool IsBallCaptureReady()
@@ -767,16 +884,36 @@ public class RobotBrain : Agent
             return;
         }
 
-        if (everCapturedBall && !holdingBall)
+        if (IsBallLost(currentDistance))
         {
-            SetTerminalReward(droppedBallPenalty, "DroppedAfterCapture");
+            RecordBallLostMetrics(currentDistance);
+            string reason = everCapturedBall || graspConfirmationPending
+                ? "BallLostAfterCapture"
+                : "BallLostBeforeCapture";
+            SetTerminalReward(ballLostBeforeCapturePenalty, reason);
             return;
         }
 
-        if (!everCapturedBall && IsBallLost(currentDistance))
+        if (graspConfirmationPending)
         {
-            RecordBallLostMetrics(currentDistance);
-            SetTerminalReward(ballLostBeforeCapturePenalty, "BallLostBeforeCapture");
+            if (!holdingBall)
+            {
+                HandleUnstableGrasp();
+                return;
+            }
+
+            stableGraspPhysicsStepCount++;
+            if (stableGraspPhysicsStepCount
+                >= Mathf.Max(1, requiredStableGraspPhysicsSteps))
+            {
+                ConfirmStableGrasp();
+            }
+            return;
+        }
+
+        if (everCapturedBall && !holdingBall)
+        {
+            HandleRecoverableBallDrop(currentDistance);
             return;
         }
 
@@ -829,7 +966,7 @@ public class RobotBrain : Agent
             || ((lastObservedBallVisible || captureReady)
                 && CanAwardPositiveNavigationProgress()))
         {
-            AddTrackedReward(
+            AddPotentialReward(
                 distancePotentialWeight * distanceDelta,
                 "DistancePotential"
             );
@@ -856,7 +993,7 @@ public class RobotBrain : Agent
         float alignmentPotential = lastObservedBallVisible
             ? GetBodyAlignmentPotential()
             : 0f;
-        AddTrackedReward(
+        AddPotentialReward(
             bodyAlignmentPotentialWeight
                 * (alignmentPotential - previousAlignmentPotential),
             "BodyAlignmentPotential"
@@ -891,7 +1028,7 @@ public class RobotBrain : Agent
         // Маленькая потенциальная награда явно обучает команде складывания двух
         // шарниров. Обратное раскладывание возвращает её назад, поэтому колебания
         // руки не могут создавать положительную награду.
-        AddTrackedReward(
+        AddPotentialReward(
             foldPotentialWeight
                 * (actuatorPotential - previousFoldPotential),
             "FoldPotential"
@@ -904,7 +1041,7 @@ public class RobotBrain : Agent
             ballHeightPotential,
             actuatorPotential
         );
-        AddTrackedReward(
+        AddPotentialReward(
             liftPotentialWeight * (liftPotential - previousLiftPotential),
             "LiftPotential"
         );
@@ -936,7 +1073,11 @@ public class RobotBrain : Agent
         previousTargetAlignmentPotential = lastObservedBallVisible
             ? GetTargetBodyAlignmentPotential()
             : 0f;
-        AddTrackedReward(liftCompletedReward, "LiftCompleted");
+        if (!liftCompletedAwarded)
+        {
+            AddTrackedReward(liftCompletedReward, "LiftCompleted");
+            liftCompletedAwarded = true;
+        }
     }
 
     private void ApplyCarryRewards()
@@ -950,7 +1091,7 @@ public class RobotBrain : Agent
         if (distanceDelta <= 0f
             || (lastObservedBallVisible && CanAwardPositiveNavigationProgress()))
         {
-            AddTrackedReward(
+            AddPotentialReward(
                 targetDistancePotentialWeight * distanceDelta,
                 "TargetDistancePotential"
             );
@@ -960,7 +1101,7 @@ public class RobotBrain : Agent
         float alignmentPotential = lastObservedBallVisible
             ? GetTargetBodyAlignmentPotential()
             : 0f;
-        AddTrackedReward(
+        AddPotentialReward(
             targetAlignmentPotentialWeight
                 * (alignmentPotential - previousTargetAlignmentPotential),
             "TargetAlignmentPotential"
@@ -1229,6 +1370,19 @@ public class RobotBrain : Agent
         }
     }
 
+    private void AddPotentialReward(float reward, string statName)
+    {
+        // После падения мяча положительные промежуточные награды отключаются
+        // до конца эпизода. Иначе цикл "уронить -> повторно подобрать" мог бы
+        // повторно начислять потенциалы подхода, подъёма и движения к кубу.
+        if (recoveryModeAfterDrop && reward > 0f)
+        {
+            return;
+        }
+
+        AddTrackedReward(reward, statName);
+    }
+
     private void SetTerminalReward(float reward, string statName)
     {
         if (!episodeInitialized || episodeTerminated)
@@ -1242,6 +1396,13 @@ public class RobotBrain : Agent
         {
             Academy.Instance.StatsRecorder.Add($"GFSX/Reward/{statName}", reward, StatAggregationMethod.Sum);
             Academy.Instance.StatsRecorder.Add($"GFSX/{statName}", 1f, StatAggregationMethod.Sum);
+        }
+        else
+        {
+            Debug.LogWarning(
+                $"Эпизод завершён: {statName}; step={StepCount}; reward={reward:F3}",
+                this
+            );
         }
         EndEpisode();
     }

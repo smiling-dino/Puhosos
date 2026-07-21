@@ -42,10 +42,12 @@ public class ArenaController : MonoBehaviour
     [SerializeField] private float ballSpawnHeightJitterMeters = 0.005f;
     [SerializeField] private Transform finalTargetTransform;
     [SerializeField] private bool createFinalTargetIfMissing = true;
+    [SerializeField] private bool randomizeFinalTargetPositionEveryEpisode = true;
     [SerializeField] private Vector3 finalTargetDefaultScale = new Vector3(0.2f, 0.2f, 0.2f);
     [SerializeField] private Vector2 finalTargetScaleRange = new Vector2(0.9f, 1.1f);
     [SerializeField] private float finalTargetSpawnY = 0.1f;
     [SerializeField] private float finalTargetClearanceRadius = 0.45f;
+    [SerializeField] private Color finalTargetBaseColor = Color.red;
     [SerializeField] private Vector2Int randomizedObstacleCountRange = new Vector2Int(3, 10);
     [SerializeField] private Vector2 randomizedObstacleScaleRange = new Vector2(0.8f, 1.2f);
 
@@ -252,28 +254,27 @@ public class ArenaController : MonoBehaviour
 
     private void EnsureFinalTarget()
     {
-        if (finalTargetTransform != null || !createFinalTargetIfMissing)
+        if (finalTargetTransform == null && createFinalTargetIfMissing)
         {
-            return;
+            GameObject finalTarget = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            finalTarget.name = "FinalTargetCube";
+            finalTarget.transform.SetParent(transform, false);
+            finalTarget.transform.localScale = finalTargetDefaultScale;
+            finalTarget.transform.localPosition = new Vector3(2f, finalTargetSpawnY, 2f);
+            finalTargetTransform = finalTarget.transform;
+            capturedFinalTargetScale = finalTargetTransform.localScale;
+            defaultFinalTargetLocalPosition = finalTargetTransform.localPosition;
+            defaultFinalTargetLocalRotation = finalTargetTransform.localRotation;
         }
 
-        GameObject finalTarget = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        finalTarget.name = "FinalTargetCube";
-        finalTarget.transform.SetParent(transform, false);
-        finalTarget.transform.localScale = finalTargetDefaultScale;
-        finalTarget.transform.localPosition = new Vector3(2f, finalTargetSpawnY, 2f);
-
-        BoxCollider targetCollider = finalTarget.GetComponent<BoxCollider>();
+        Collider targetCollider = finalTargetTransform != null
+            ? finalTargetTransform.GetComponentInChildren<Collider>()
+            : null;
         if (targetCollider != null)
         {
             // Цель задаёт точку остановки, а не дополнительную стену.
             targetCollider.isTrigger = true;
         }
-
-        finalTargetTransform = finalTarget.transform;
-        capturedFinalTargetScale = finalTargetTransform.localScale;
-        defaultFinalTargetLocalPosition = finalTargetTransform.localPosition;
-        defaultFinalTargetLocalRotation = finalTargetTransform.localRotation;
     }
 
     private void ApplyFloorRandomization()
@@ -392,19 +393,23 @@ public class ArenaController : MonoBehaviour
             return;
         }
 
-        if (!p1RandomizationEnabled && !p2RandomizationEnabled)
-        {
-            targetRenderer.SetPropertyBlock(null);
-            return;
-        }
-
         if (redPropertyBlock == null)
         {
             redPropertyBlock = new MaterialPropertyBlock();
         }
 
-        float hue = Mathf.Repeat(Random.Range(-10f, 10f) / 360f, 1f);
-        Color red = Color.HSVToRGB(hue, Random.Range(0.65f, 1f), Random.Range(0.45f, 1f));
+        Color red = finalTargetBaseColor;
+        if (p1RandomizationEnabled || p2RandomizationEnabled)
+        {
+            float hue = Mathf.Repeat(Random.Range(-10f, 10f) / 360f, 1f);
+            red = Color.HSVToRGB(
+                hue,
+                Random.Range(0.65f, 1f),
+                Random.Range(0.45f, 1f)
+            );
+        }
+
+        redPropertyBlock.Clear();
         targetRenderer.GetPropertyBlock(redPropertyBlock);
         redPropertyBlock.SetColor("_BaseColor", red);
         redPropertyBlock.SetColor("_Color", red);
@@ -547,7 +552,7 @@ public class ArenaController : MonoBehaviour
             return;
         }
 
-        if (!p1RandomizationEnabled)
+        if (!randomizeFinalTargetPositionEveryEpisode)
         {
             finalTargetTransform.localPosition = defaultFinalTargetLocalPosition;
             finalTargetTransform.localRotation = defaultFinalTargetLocalRotation;

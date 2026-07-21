@@ -79,10 +79,12 @@ MonoBehaviour:
   ballSpawnHeightJitterMeters: 0.005
   finalTargetTransform: {fileID: 0}
   createFinalTargetIfMissing: 1
+  randomizeFinalTargetPositionEveryEpisode: 1
   finalTargetDefaultScale: {x: 0.2, y: 0.2, z: 0.2}
   finalTargetScaleRange: {x: 0.9, y: 1.1}
   finalTargetSpawnY: 0.1
   finalTargetClearanceRadius: 0.45
+  finalTargetBaseColor: {r: 1, g: 0, b: 0, a: 1}
   randomizedObstacleCountRange: {x: 3, y: 10}
   randomizedObstacleScaleRange: {x: 0.8, y: 1.2}
   useMultipleBallTypes: 1
@@ -2191,8 +2193,8 @@ MonoBehaviour:
   leftClosedAngleDegrees: 25
   rightClosedAngleDegrees: -25
   gripNormalizedSpeed: 3
-  holdJointBreakForce: 35
-  holdJointBreakTorque: 12
+  holdJointBreakForce: 250
+  holdJointBreakTorque: 80
   ignoreRobotCollisionsWhileHeld: 1
   liftNormalized: 0
   gripNormalized: 0
@@ -2250,9 +2252,10 @@ MonoBehaviour:
   gripperController: {fileID: 53475963758593267}
   arenaController: {fileID: 8183862508645542294}
   hasBall: 0
-  gripperCaptureRadius: 0.08
+  gripperCaptureRadius: 0.1
   cameraYawLimitDegrees: 90
   cameraTurnSpeedDegrees: 50
+  requiredStableGraspPhysicsSteps: 8
   requiredLiftHeightMeters: 0.08
   requiredStableLiftDecisions: 10
   targetStopDistanceMeters: 0.45
@@ -2281,7 +2284,7 @@ MonoBehaviour:
   terminalSuccessReward: 1
   failedGraspPenalty: -0.03
   ballLostBeforeCapturePenalty: -1
-  droppedBallPenalty: -1
+  droppedBallPenalty: -0.25
   fallOrFlipPenalty: -1
   timeoutPenalty: -0.5
   ordinaryCollisionPenalty: -0.1
