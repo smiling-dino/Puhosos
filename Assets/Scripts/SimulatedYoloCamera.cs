@@ -42,22 +42,26 @@ public class SimulatedYoloCamera : MonoBehaviour
     /// </summary>
     public bool IsBallVisible()
     {
-        if (targetBall == null) return false;
-        if (!IsFinite(targetBall.position) || !IsFinite(transform.position)) return false;
+        return IsTargetVisible(targetBall);
+    }
+
+    public bool IsTargetVisible(Transform target)
+    {
+        if (target == null) return false;
+        if (!IsFinite(target.position) || !IsFinite(transform.position)) return false;
 
         // 1. Проверка дистанции
-        float distance = Vector3.Distance(transform.position, targetBall.position);
+        float distance = Vector3.Distance(transform.position, target.position);
         if (float.IsNaN(distance) || float.IsInfinity(distance)) return false;
         if (distance > maxDetectionDistance) return false;
 
         // 2. Проверка угла обзора (FOV)
-        Vector3 directionToBall = (targetBall.position - transform.position).normalized;
-        float angle = Mathf.Abs(GetSignedHorizontalAngleToBall());
+        float angle = Mathf.Abs(GetSignedHorizontalAngleToTarget(target));
         if (float.IsNaN(angle) || float.IsInfinity(angle)) return false;
         if (angle > (horizontalFov / 2f)) return false;
 
         // 3. Несколько лучей позволяют отличать частичное перекрытие от полного.
-        Vector3[] samples = GetTargetVisibilitySamples();
+        Vector3[] samples = GetTargetVisibilitySamples(target);
         int requiredVisibleSamples = Mathf.Clamp(
             Mathf.CeilToInt(samples.Length * requiredVisibleSampleFraction),
             1,
@@ -67,7 +71,7 @@ public class SimulatedYoloCamera : MonoBehaviour
 
         foreach (Vector3 sample in samples)
         {
-            if (HasLineOfSight(sample))
+            if (HasLineOfSight(sample, target))
             {
                 visibleSamples++;
                 if (visibleSamples >= requiredVisibleSamples)
@@ -80,10 +84,10 @@ public class SimulatedYoloCamera : MonoBehaviour
         return false;
     }
 
-    private Vector3[] GetTargetVisibilitySamples()
+    private Vector3[] GetTargetVisibilitySamples(Transform target)
     {
-        Collider targetCollider = targetBall.GetComponentInChildren<Collider>();
-        Vector3 center = targetCollider != null ? targetCollider.bounds.center : targetBall.position;
+        Collider targetCollider = target.GetComponentInChildren<Collider>();
+        Vector3 center = targetCollider != null ? targetCollider.bounds.center : target.position;
         float radius = 0.01f;
         if (targetCollider != null)
         {
@@ -100,7 +104,7 @@ public class SimulatedYoloCamera : MonoBehaviour
         return visibilitySamples;
     }
 
-    private bool HasLineOfSight(Vector3 targetPoint)
+    private bool HasLineOfSight(Vector3 targetPoint, Transform target)
     {
         Vector3 offset = targetPoint - transform.position;
         float distance = offset.magnitude;
@@ -121,7 +125,7 @@ public class SimulatedYoloCamera : MonoBehaviour
         for (int i = 0; i < hitCount; i++)
         {
             RaycastHit hit = visibilityHits[i];
-            if (hit.collider == cameraHostCollider || IsTargetCollider(hit.transform))
+            if (hit.collider == cameraHostCollider || IsTargetCollider(hit.transform, target))
             {
                 continue;
             }
@@ -139,20 +143,25 @@ public class SimulatedYoloCamera : MonoBehaviour
 
     public float GetSignedHorizontalAngleToBall()
     {
-        if (targetBall == null) return 180f;
-        if (!IsFinite(targetBall.position) || !IsFinite(transform.position)) return 180f;
+        return GetSignedHorizontalAngleToTarget(targetBall);
+    }
+
+    public float GetSignedHorizontalAngleToTarget(Transform target)
+    {
+        if (target == null) return 180f;
+        if (!IsFinite(target.position) || !IsFinite(transform.position)) return 180f;
 
         Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
-        Vector3 flatDirectionToBall = Vector3.ProjectOnPlane(targetBall.position - transform.position, Vector3.up);
+        Vector3 flatDirectionToTarget = Vector3.ProjectOnPlane(target.position - transform.position, Vector3.up);
 
-        if (flatForward.sqrMagnitude < 0.0001f || flatDirectionToBall.sqrMagnitude < 0.0001f)
+        if (flatForward.sqrMagnitude < 0.0001f || flatDirectionToTarget.sqrMagnitude < 0.0001f)
         {
             return 180f;
         }
 
         return Vector3.SignedAngle(
             flatForward.normalized,
-            flatDirectionToBall.normalized,
+            flatDirectionToTarget.normalized,
             Vector3.up
         );
     }
@@ -162,9 +171,14 @@ public class SimulatedYoloCamera : MonoBehaviour
     /// </summary>
     public float GetNormalizedHorizontalAngle()
     {
-        if (targetBall == null) return 0f;
+        return GetNormalizedHorizontalAngleToTarget(targetBall);
+    }
 
-        Vector3 viewportPos = cam.WorldToViewportPoint(targetBall.position);
+    public float GetNormalizedHorizontalAngleToTarget(Transform target)
+    {
+        if (target == null) return 0f;
+
+        Vector3 viewportPos = cam.WorldToViewportPoint(target.position);
         // Преобразуем диапазон [0, 1] в [-1, 1]
         return Mathf.Clamp((viewportPos.x - 0.5f) * 2f, -1f, 1f);
     }
@@ -174,18 +188,28 @@ public class SimulatedYoloCamera : MonoBehaviour
     /// </summary>
     public float GetNormalizedDistance()
     {
-        if (targetBall == null) return 1f;
+        return GetNormalizedDistanceToTarget(targetBall);
+    }
 
-        float distance = GetDistanceToBall();
+    public float GetNormalizedDistanceToTarget(Transform target)
+    {
+        if (target == null) return 1f;
+
+        float distance = GetDistanceToTarget(target);
         return Mathf.Clamp01(distance / maxDetectionDistance);
     }
 
     public float GetDistanceToBall()
     {
-        if (targetBall == null) return float.PositiveInfinity;
-        if (!IsFinite(targetBall.position) || !IsFinite(transform.position)) return float.PositiveInfinity;
+        return GetDistanceToTarget(targetBall);
+    }
 
-        return Vector3.Distance(transform.position, targetBall.position);
+    public float GetDistanceToTarget(Transform target)
+    {
+        if (target == null) return float.PositiveInfinity;
+        if (!IsFinite(target.position) || !IsFinite(transform.position)) return float.PositiveInfinity;
+
+        return Vector3.Distance(transform.position, target.position);
     }
 
     public Transform GetBallTransform()
@@ -235,11 +259,11 @@ public class SimulatedYoloCamera : MonoBehaviour
         }
     }
 
-    private bool IsTargetCollider(Transform candidate)
+    private bool IsTargetCollider(Transform candidate, Transform target)
     {
         return candidate != null
-            && targetBall != null
-            && (candidate == targetBall || candidate.IsChildOf(targetBall));
+            && target != null
+            && (candidate == target || candidate.IsChildOf(target));
     }
 
     public void SetDetectionProfile(float detectionDistance, float fov)

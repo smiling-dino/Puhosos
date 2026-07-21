@@ -4,16 +4,16 @@ env_settings:
 environment_parameters:
   initial_target_visible_probability:
     curriculum:
-      - name: grasp_and_lift
+      - name: grasp_lift_carry_and_stop
         completion_criteria:
-          # Переходим дальше только после обучения успешному Z-подъёму,
-          # а не после прохождения фиксированной доли max_steps.
+          # Переходим дальше только после полного маршрута:
+          # захват, Z-подъём, доставка к кубу и остановка.
           measure: reward
           behavior: GFSX_Brain
           signal_smoothing: true
           min_lesson_length: 100
-          # Без терминального успеха суммарный положительный бюджет < 0.95,
-          # поэтому 1.0 нельзя пройти одним лишь shaping-прогрессом.
+          # До терминального успеха суммарный положительный бюджет < 1.0,
+          # поэтому порог нельзя пройти одними промежуточными наградами.
           threshold: 1.00
           require_reset: true
         value: 1.0

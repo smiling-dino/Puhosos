@@ -98,6 +98,16 @@ public class ArenaController : MonoBehaviour
     public int LastVisibleTargetFallbackSpawns { get; private set; }
     public bool LastTargetRequestedVisible { get; private set; }
 
+    public bool IsWorldPositionInsideArena(Vector3 worldPosition, float allowedMargin = 0f)
+    {
+        Vector3 localPosition = transform.InverseTransformPoint(worldPosition);
+        float margin = Mathf.Max(0f, allowedMargin);
+        return localPosition.x >= minX - margin
+            && localPosition.x <= maxX + margin
+            && localPosition.z >= minZ - margin
+            && localPosition.z <= maxZ + margin;
+    }
+
     public void ConfigureEpisodeRandomization(bool enableP1, bool enableP2)
     {
         p1RandomizationEnabled = enableP1;

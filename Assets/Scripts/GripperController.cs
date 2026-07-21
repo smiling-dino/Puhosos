@@ -64,6 +64,11 @@ public class GripperController : MonoBehaviour
     [SerializeField, Min(0.01f)]
     private float gripNormalizedSpeed = 3f;
 
+    [Header("=== Физическое удержание мяча ===")]
+    [SerializeField, Min(0.1f)] private float holdJointBreakForce = 35f;
+    [SerializeField, Min(0.1f)] private float holdJointBreakTorque = 12f;
+    [SerializeField] private bool ignoreRobotCollisionsWhileHeld = true;
+
     [Header("=== Текущее состояние ===")]
     [SerializeField, Range(0f, 1f)]
     private float liftNormalized;
@@ -90,8 +95,15 @@ public class GripperController : MonoBehaviour
 
     private GameObject heldBall;
     private Rigidbody ballRigidbody;
-    private Collider ballCollider;
+    private Rigidbody connectedRobotRigidbody;
+    private FixedJoint holdJoint;
+    private Collider[] ballColliders = new Collider[0];
+    private Collider[] robotColliders = new Collider[0];
     private Transform originalBallParent;
+    private bool originalBallIsKinematic;
+    private bool originalBallUseGravity;
+    private RigidbodyInterpolation originalBallInterpolation;
+    private CollisionDetectionMode originalBallCollisionDetection;
 
     public bool IsClosed => targetClosed;
 
@@ -161,9 +173,11 @@ public class GripperController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        RefreshHeldBallState();
         UpdateGrip();
         UpdateArmFold();
         ApplyPose();
+        UpdateHoldJointAnchor();
     }
 
     private void UpdateGrip()
@@ -268,6 +282,7 @@ public class GripperController : MonoBehaviour
 
     public void GrabBall(GameObject ball)
     {
+        RefreshHeldBallState();
         if (heldBall != null || ball == null)
         {
             return;
@@ -282,68 +297,159 @@ public class GripperController : MonoBehaviour
             return;
         }
 
+        Rigidbody candidateBallRigidbody = ball.GetComponent<Rigidbody>();
+        Rigidbody candidateRobotRigidbody = GetComponentInParent<Rigidbody>();
+        if (candidateBallRigidbody == null || candidateRobotRigidbody == null)
+        {
+            Debug.LogError(
+                "Для физического захвата мячу и корню робота нужны Rigidbody",
+                this
+            );
+            return;
+        }
+
         heldBall = ball;
-        ballRigidbody = heldBall.GetComponent<Rigidbody>();
-        ballCollider = heldBall.GetComponent<Collider>();
+        ballRigidbody = candidateBallRigidbody;
+        connectedRobotRigidbody = candidateRobotRigidbody;
         originalBallParent = heldBall.transform.parent;
+        originalBallIsKinematic = ballRigidbody.isKinematic;
+        originalBallUseGravity = ballRigidbody.useGravity;
+        originalBallInterpolation = ballRigidbody.interpolation;
+        originalBallCollisionDetection = ballRigidbody.collisionDetectionMode;
 
-        if (ballRigidbody != null)
-        {
-            ballRigidbody.linearVelocity = Vector3.zero;
-            ballRigidbody.angularVelocity = Vector3.zero;
-            ballRigidbody.isKinematic = true;
-        }
+        ballColliders = heldBall.GetComponentsInChildren<Collider>(true);
+        robotColliders = connectedRobotRigidbody.GetComponentsInChildren<Collider>(true);
+        SetRobotBallCollisionIgnored(ignoreRobotCollisionsWhileHeld);
 
-        if (ballCollider != null)
-        {
-            ballCollider.enabled = false;
-        }
+        ballRigidbody.isKinematic = true;
+        ballRigidbody.position = holdPoint.position;
+        ballRigidbody.rotation = holdPoint.rotation;
+        Physics.SyncTransforms();
 
-        heldBall.transform.SetParent(holdPoint, false);
-        heldBall.transform.localPosition = Vector3.zero;
-        heldBall.transform.localRotation = Quaternion.identity;
+        ballRigidbody.isKinematic = false;
+        ballRigidbody.useGravity = true;
+        ballRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+        ballRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        ballRigidbody.linearVelocity = connectedRobotRigidbody.linearVelocity;
+        ballRigidbody.angularVelocity = connectedRobotRigidbody.angularVelocity;
+
+        holdJoint = heldBall.AddComponent<FixedJoint>();
+        holdJoint.connectedBody = connectedRobotRigidbody;
+        holdJoint.autoConfigureConnectedAnchor = false;
+        holdJoint.anchor = heldBall.transform.InverseTransformPoint(holdPoint.position);
+        holdJoint.connectedAnchor = connectedRobotRigidbody.transform.InverseTransformPoint(holdPoint.position);
+        holdJoint.breakForce = holdJointBreakForce;
+        holdJoint.breakTorque = holdJointBreakTorque;
+        holdJoint.enableCollision = false;
+        holdJoint.enablePreprocessing = true;
     }
 
     public void ReleaseBall()
     {
         liftInput = 0f;
 
-        if (heldBall == null)
-        {
-            return;
-        }
-
-        Transform targetParent =
-            originalBallParent != null
-                ? originalBallParent
-                : transform.parent;
-
-        heldBall.transform.SetParent(
-            targetParent,
-            true
-        );
-
-        if (ballCollider != null)
-        {
-            ballCollider.enabled = true;
-        }
-
-        if (ballRigidbody != null)
-        {
-            ballRigidbody.isKinematic = false;
-            ballRigidbody.linearVelocity = Vector3.zero;
-            ballRigidbody.angularVelocity = Vector3.zero;
-        }
-
-        heldBall = null;
-        ballRigidbody = null;
-        ballCollider = null;
-        originalBallParent = null;
+        DetachHeldBall(true);
     }
 
     public bool IsHoldingBall()
     {
-        return heldBall != null;
+        RefreshHeldBallState();
+        return heldBall != null && holdJoint != null;
+    }
+
+    private void RefreshHeldBallState()
+    {
+        if (heldBall == null)
+        {
+            ClearHeldBallReferences();
+            return;
+        }
+
+        if (holdJoint == null)
+        {
+            // Соединение разрушилось из-за физической нагрузки: мяч остаётся
+            // динамическим, а RobotBrain завершает эпизод штрафом за потерю.
+            DetachHeldBall(false);
+        }
+    }
+
+    private void UpdateHoldJointAnchor()
+    {
+        if (holdJoint == null || connectedRobotRigidbody == null || holdPoint == null)
+        {
+            return;
+        }
+
+        holdJoint.connectedAnchor = connectedRobotRigidbody.transform.InverseTransformPoint(
+            holdPoint.position
+        );
+    }
+
+    private void DetachHeldBall(bool resetVelocity)
+    {
+        GameObject ballToRelease = heldBall;
+        Rigidbody rigidbodyToRelease = ballRigidbody;
+
+        if (holdJoint != null)
+        {
+            Destroy(holdJoint);
+            holdJoint = null;
+        }
+
+        SetRobotBallCollisionIgnored(false);
+
+        if (ballToRelease != null)
+        {
+            Transform targetParent = originalBallParent != null
+                ? originalBallParent
+                : transform.parent;
+            ballToRelease.transform.SetParent(targetParent, true);
+        }
+
+        if (rigidbodyToRelease != null)
+        {
+            rigidbodyToRelease.isKinematic = originalBallIsKinematic;
+            rigidbodyToRelease.useGravity = originalBallUseGravity;
+            rigidbodyToRelease.interpolation = originalBallInterpolation;
+            rigidbodyToRelease.collisionDetectionMode = originalBallCollisionDetection;
+            if (resetVelocity)
+            {
+                rigidbodyToRelease.linearVelocity = Vector3.zero;
+                rigidbodyToRelease.angularVelocity = Vector3.zero;
+            }
+        }
+
+        ClearHeldBallReferences();
+    }
+
+    private void SetRobotBallCollisionIgnored(bool ignored)
+    {
+        foreach (Collider ballPart in ballColliders)
+        {
+            if (ballPart == null)
+            {
+                continue;
+            }
+
+            foreach (Collider robotPart in robotColliders)
+            {
+                if (robotPart != null && robotPart != ballPart)
+                {
+                    Physics.IgnoreCollision(ballPart, robotPart, ignored);
+                }
+            }
+        }
+    }
+
+    private void ClearHeldBallReferences()
+    {
+        heldBall = null;
+        ballRigidbody = null;
+        connectedRobotRigidbody = null;
+        holdJoint = null;
+        ballColliders = new Collider[0];
+        robotColliders = new Collider[0];
+        originalBallParent = null;
     }
 
     public bool IsBallInsideCaptureZone(

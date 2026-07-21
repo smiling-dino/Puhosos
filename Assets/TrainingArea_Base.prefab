@@ -2191,6 +2191,9 @@ MonoBehaviour:
   leftClosedAngleDegrees: 25
   rightClosedAngleDegrees: -25
   gripNormalizedSpeed: 3
+  holdJointBreakForce: 35
+  holdJointBreakTorque: 12
+  ignoreRobotCollisionsWhileHeld: 1
   liftNormalized: 0
   gripNormalized: 0
   targetClosed: 0
@@ -2252,22 +2255,35 @@ MonoBehaviour:
   cameraTurnSpeedDegrees: 50
   requiredLiftHeightMeters: 0.08
   requiredStableLiftDecisions: 10
+  targetStopDistanceMeters: 0.45
+  targetStopToleranceMeters: 0.15
+  maxStopPlanarSpeedMetersPerSecond: 0.05
+  maxStopAngularSpeedDegreesPerSecond: 8
+  requiredStableStopDecisions: 10
   enableDomainRandomization: 1
   maxBallDistanceForEpisode: 20
   maxBallDropBelowArena: 1
-  timePenaltyPerDecision: 0.0005
-  distancePotentialWeight: 0.3
-  bodyAlignmentPotentialWeight: 0.05
-  firstAcquisitionReward: 0.05
-  captureZoneReward: 0.1
-  confirmedGraspReward: 0.25
-  foldPotentialWeight: 0.05
-  liftPotentialWeight: 0.15
+  ballArenaExitMarginMeters: 0.25
+  timePenaltyPerDecision: 0.00025
+  idlePenaltyPerDecision: 0.00025
+  idleActionThreshold: 0.05
+  distancePotentialWeight: 0.15
+  bodyAlignmentPotentialWeight: 0.02
+  firstAcquisitionReward: 0.02
+  captureZoneReward: 0.03
+  confirmedGraspReward: 0.2
+  foldPotentialWeight: 0.03
+  liftPotentialWeight: 0.1
+  liftCompletedReward: 0.15
+  targetDistancePotentialWeight: 0.2
+  targetAlignmentPotentialWeight: 0.02
+  maxTargetDistanceForPotentialMeters: 2
   terminalSuccessReward: 1
-  failedGraspPenalty: -0.02
+  failedGraspPenalty: -0.03
   ballLostBeforeCapturePenalty: -1
   droppedBallPenalty: -1
   fallOrFlipPenalty: -1
+  timeoutPenalty: -0.5
   ordinaryCollisionPenalty: -0.1
   sustainedCollisionPenaltyPerDecision: -0.002
   collisionPenaltyCooldownSeconds: 0.5
@@ -2277,7 +2293,7 @@ MonoBehaviour:
   liftEffortPenaltyScale: 0.00002
   wheelSmoothnessPenaltyScale: 0.00005
   auxiliarySmoothnessPenaltyScale: 0.00001
-  dangerPenaltyScale: 0.001
+  dangerPenaltyScale: 0.003
   safeUltrasoundDistanceMeters: 0.25
   maxDistanceForPotentialMeters: 2
   maxTimeSinceDetectionSeconds: 5
