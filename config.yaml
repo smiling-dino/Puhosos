@@ -1,5 +1,5 @@
 env_settings:
-  num_areas: 20
+  num_areas: 25
 
 environment_parameters:
   initial_target_visible_probability:
@@ -64,4 +64,4 @@ behaviors:
     keep_checkpoints: 5
     max_steps: 5000000
     time_horizon: 1000
-    summary_freq: 1000
+    summary_freq: 25000
