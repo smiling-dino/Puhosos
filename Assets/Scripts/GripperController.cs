@@ -48,7 +48,7 @@ public class GripperController : MonoBehaviour
         if (ballRigidbody != null && ballCollider != null)
         {
             ballRigidbody.isKinematic = true;
-            ballCollider.enabled = false;
+            ballCollider.isTrigger = true;
             heldBall.transform.SetParent(holdPoint);
             heldBall.transform.localPosition = Vector3.zero;
         }
@@ -63,7 +63,7 @@ public class GripperController : MonoBehaviour
             // Возвращаем мяч обратно в его родную Арену
             heldBall.transform.SetParent(originalParent); 
             
-            ballCollider.enabled = true;
+            ballCollider.isTrigger = false;
             ballRigidbody.isKinematic = false;
         }
 

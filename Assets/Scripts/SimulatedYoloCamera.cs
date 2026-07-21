@@ -1,42 +1,46 @@
+using System.Collections.Generic;
 using UnityEngine;
+
+// Класс для хранения настроек и результатов поиска одной цели
+[System.Serializable]
+public class YoloTargetInfo
+{
+    [Tooltip("Тег искомого объекта (например, TargetBall)")]
+    public string targetTag;
+    [Tooltip("Цвет луча в редакторе (OnDrawGizmos)")]
+    public Color gizmoColor = Color.green;
+    
+    [Header("Выходные данные (Read-only)")]
+    public bool isVisible = false;
+    public float horizontalOffset = 0f;
+    public float normalizedDistance = 1f;
+    
+    [HideInInspector] 
+    public Transform currentTrackedObject = null;
+}
 
 [RequireComponent(typeof(Camera))]
 public class SimulatedYoloCamera : MonoBehaviour
 {
     [Header("=== Настройки YOLO Камеры ===")]
-    [Tooltip("Тег объектов, которые камера должна распознавать (например, TargetBall)")]
-    public string targetTag = "TargetBall";
+    [Tooltip("Список объектов, которые камера должна распознавать")]
+    public YoloTargetInfo[] targets;
     
     [Tooltip("Максимальная дальность видимости (в метрах)")]
     public float maxVisionDistance = 2.0f;
 
-    [Header("=== Выходные данные (Для чтения ИИ) ===")]
-    public bool isBallVisible = false;
-    
-    [Tooltip("Относительное смещение: -1 (крайний левый) .. 0 (центр) .. 1 (крайний правый)")]
-    public float horizontalOffset = 0f;
-    
-    [Tooltip("Нормализованная дистанция: 0 (вплотную) .. 1 (на границе maxVisionDistance)")]
-    public float normalizedDistance = 1f;
-
     private Camera cam;
-    private Transform currentTrackedBall = null;
 
     void Start()
     {
-        // Получаем компонент камеры и жестко задаем FOV = 40 градусов
         cam = GetComponent<Camera>();
         if (cam != null)
         {
             cam.fieldOfView = 40f;
-
-            // Устанавливаем фиксированное соотношение сторон 4:3 (или 16:9)
             float targetAspect = 4f / 3f; 
 
-            // КРИТИЧЕСКИЙ ФИКС ДЛЯ headless / -nographics режима:
             if (Application.isBatchMode)
             {
-                // Задаем проекционную матрицу вручную, так как экрана нет и авто-aspect не сработает
                 cam.projectionMatrix = Matrix4x4.Perspective(
                     cam.fieldOfView, 
                     targetAspect, 
@@ -46,7 +50,6 @@ public class SimulatedYoloCamera : MonoBehaviour
             }
             else
             {
-                // В режиме с графикой задаем стандартно
                 cam.aspect = targetAspect;
             }
         }
@@ -57,83 +60,90 @@ public class SimulatedYoloCamera : MonoBehaviour
         ProcessVision();
     }
 
-    /// <summary>
-    /// Симуляция YOLO через проекцию 3D-мира на 2D-плоскость камеры
-    /// </summary>
     private void ProcessVision()
     {
         Vector3 camPos = transform.position;
         Collider[] collidersInRange = Physics.OverlapSphere(camPos, maxVisionDistance);
         
-        Transform bestTarget = null;
-        float minDistance = float.MaxValue;
-        Vector3 bestViewportPos = Vector3.zero;
-
-        foreach (Collider col in collidersInRange)
+        // Перебираем каждую настроенную цель (мяч, куб и т.д.)
+        foreach (var target in targets)
         {
-            if (col.CompareTag(targetTag))
+            // Сброс состояния перед новым кадром
+            target.isVisible = false;
+            target.horizontalOffset = 0f;
+            target.normalizedDistance = 1f;
+            target.currentTrackedObject = null;
+
+            Transform bestTarget = null;
+            float minDistance = float.MaxValue;
+            Vector3 bestViewportPos = Vector3.zero;
+
+            foreach (Collider col in collidersInRange)
             {
-                Vector3 ballPos = col.transform.position;
-                
-                // 1. Магия Unity: Переводим 3D координаты в 2D координаты экрана (Viewport: от 0 до 1)
-                Vector3 viewportPos = cam.WorldToViewportPoint(ballPos);
-
-                // 2. Проверяем, находится ли мяч перед камерой (z > 0) и в пределах кадра (x и y от 0 до 1)
-                if (viewportPos.z > 0 && viewportPos.x >= 0f && viewportPos.x <= 1f && viewportPos.y >= 0f && viewportPos.y <= 1f)
+                if (col.CompareTag(target.targetTag))
                 {
-                    Vector3 dirToBall = ballPos - camPos;
-                    float actualDistance = dirToBall.magnitude;
+                    Vector3 objPos = col.transform.position;
+                    Vector3 viewportPos = cam.WorldToViewportPoint(objPos);
 
-                    // 3. Проверка на окклюзию (Line-of-Sight) - видим ли мы мяч, или он за стеной
-                    if (Physics.Raycast(camPos, dirToBall.normalized, out RaycastHit hit, maxVisionDistance))
+                    if (viewportPos.z > 0 && viewportPos.x >= 0f && viewportPos.x <= 1f && viewportPos.y >= 0f && viewportPos.y <= 1f)
                     {
-                        if (hit.collider == col)
+                        Vector3 dirToObj = objPos - camPos;
+                        float actualDistance = dirToObj.magnitude;
+
+                        // Добавлено игнорирование триггеров, чтобы зоны не перекрывали зрение
+                        if (Physics.Raycast(camPos, dirToObj.normalized, out RaycastHit hit, maxVisionDistance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
                         {
-                            if (actualDistance < minDistance)
+                            if (hit.collider == col)
                             {
-                                minDistance = actualDistance;
-                                bestTarget = col.transform;
-                                bestViewportPos = viewportPos; // Запоминаем позицию на экране для лучшего мяча
+                                if (actualDistance < minDistance)
+                                // Ищем самый близкий объект данного тега
+                                {
+                                    minDistance = actualDistance;
+                                    bestTarget = col.transform;
+                                    bestViewportPos = viewportPos;
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        // === РЕЗУЛЬТАТ ОБНАРУЖЕНИЯ ===
-        if (bestTarget != null)
-        {
-            isBallVisible = true;
-            normalizedDistance = minDistance / maxVisionDistance;
-
-            // Viewport.x выдает значения от 0 (крайний левый) до 1 (крайний правый)
-            // Формула (x - 0.5) * 2 переводит этот диапазон в формат ИИ: от -1 до 1
-            horizontalOffset = (bestViewportPos.x - 0.5f) * 2f;
-            horizontalOffset = Mathf.Clamp(horizontalOffset, -1f, 1f);
-            
-            currentTrackedBall = bestTarget;
+            // Сохраняем результаты для конкретной цели
+            if (bestTarget != null)
+            {
+                target.isVisible = true;
+                target.normalizedDistance = minDistance / maxVisionDistance;
+                target.horizontalOffset = Mathf.Clamp((bestViewportPos.x - 0.5f) * 2f, -1f, 1f);
+                target.currentTrackedObject = bestTarget;
+            }
         }
-        else
-        {
-            ResetVisionState();
-        }
-    }
-
-    private void ResetVisionState()
-    {
-        isBallVisible = false;
-        horizontalOffset = 0f;
-        normalizedDistance = 1f; 
-        currentTrackedBall = null;
     }
 
     void OnDrawGizmos()
     {
-        if (isBallVisible && currentTrackedBall != null)
+        if (targets == null) return;
+
+        foreach (var target in targets)
         {
-            Gizmos.color = Color.green;
-            Gizmos.DrawLine(transform.position, currentTrackedBall.position);
+            if (target.isVisible && target.currentTrackedObject != null)
+            {
+                Gizmos.color = target.gizmoColor;
+                Gizmos.DrawLine(transform.position, target.currentTrackedObject.position);
+            }
         }
+    }
+    
+    /// <summary>
+    /// Вспомогательный метод для получения данных конкретной цели из других скриптов
+    /// </summary>
+    public YoloTargetInfo GetTarget(string tagToFind)
+    {
+        if (targets == null) return null;
+        foreach (var target in targets)
+        {
+            if (target.targetTag == tagToFind)
+                return target;
+        }
+        return null;
     }
 }

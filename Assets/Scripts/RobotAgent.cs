@@ -12,49 +12,54 @@ public class RobotAgent : Agent
     public GripperController gripperController;
     public VirtualSensors virtualSensors;
     public SimulatedYoloCamera yoloCamera;
-    
-    [Header("=== Настройки обучения (Спавн) ===")]
-    [Tooltip("Границы случайного спавна по X (от центра арены)")]
-    public float spawnAreaWidth = 3.5f;
-    [Tooltip("Границы случайного спавна по Z (от центра арены)")]
-    public float spawnAreaLength = 3.5f;
-    [Tooltip("Высота спавна мяча, чтобы он не провалился под пол")]
-    public float ballSpawnHeight = 0.5f;
+    public ArenaManager arenaManager; 
+
+    [Header("=== Настройки Целей ===")]
+    public string ballTag = "TargetBall";
+    public string cubeTag = "TargetCube";
+    [Tooltip("Дистанция до стенки куба по осям XZ, при которой сброс мяча считается успешным")]
+    public float victoryDistance = 0.4f;
 
     [Header("=== Настройки Наград и Штрафов ===")]
-    public float rewardGoalReached = 10.0f;        // Успешный захват мяча
-    public float rewardCentering = 1.0f;        // Бонус за удержание мяча по центру камеры
-    public float rewardDistanceMultiplier = 1.0f; // Множитель награды за сближение с мячом
+    public float rewardGoalReached = 10.0f;       
+    public float rewardCentering = 1.0f;        
+    public float rewardDistanceMultiplier = 1.0f; 
+    public float rewardHoldBallStep = 0.002f;     
     
     [Space(10)]
-    public float penaltyCrash = -2.0f;            // Штраф за столкновение со стеной
-    public float penaltyDropBall = -1.0f;         // Штраф за случайную потерю мяча из клешни
-    public float penaltyJerkMultiplier = 0.005f;  // Сила штрафа за резкое управление
-    public float penaltyUltrasound = -0.02f;      // Штраф за опасное сближение (УЗ-датчик)
-    public float penaltyIRObstacle = -0.01f;      // Штраф за опасное сближение (ИК-датчики)
-    public float rewardTimePenalty = -0.002f;       //Штраф за время по модулю
-    public float rewardBodyAlignment = 0.002f;    // Бонус за выравнивание корпуса на мяч
+    public float penaltyCrash = -2.0f;            
+    public float penaltyDropBall = -2.0f;         
+    public float penaltyJerkMultiplier = 0.005f;  
+    public float penaltyUltrasound = -0.02f;      
+    public float penaltyIRObstacle = -0.01f;      
+    public float rewardTimePenalty = -0.002f;       
     
     [Space(10)]
-    [Tooltip("Включить штраф за закрытие клешни, если в ней нет мяча?")]
     public bool penalizeEmptyGrab = true;
-    public float penaltyEmptyGrab = -0.01f;       // Штраф за пустое смыкание
+    public float penaltyEmptyGrab = -0.01f;       
 
     private Rigidbody rb;
     private GameObject targetBall;
+    private GameObject targetCube; 
 
     // --- Состояния для вычислений ИИ ---
     private Vector3 startPosition;
     private Quaternion startRotation;
-    private float previousDistanceToBall;
     
-    // Память ИИ
+    private float previousDistanceToTarget;
+    private float previousTargetQuality; 
+    private bool wasTargetVisibleLastFrame = false; 
+    
     private float prevGas = 0f;
     private float prevSteer = 0f;
-    private float lastKnownBallDirection = 0f;
     private float timeSinceLastDetection = 0f;
-    private float previousCameraOffset = 1f;
+    private float lastKnownTargetDirection = 0f; 
+    
+    private bool phaseTwoActive = false; 
+
+    // --- Статистика для TensorBoard ---
     private bool isEpisodeResolved = false;
+    private bool hasGrabbedBall = false; // НОВОЕ: Флаг захвата мяча в текущем эпизоде
 
     public override void Initialize()
     {
@@ -65,93 +70,55 @@ public class RobotAgent : Agent
 
     public override void OnEpisodeBegin()
     {
+        // НОВОЕ: Сброс статистики
         isEpisodeResolved = false;
+        hasGrabbedBall = false; 
+        phaseTwoActive = false;
 
-        // 1. Сброс состояния механизмов
         if (gripperController != null && gripperController.IsHoldingBall())
-        {
             gripperController.ReleaseBall();
-        }
         
         if (trackController != null)
-        {
             trackController.ResetMotors();
-        }
 
-        // 2. Сброс переменных и позиции
         prevGas = 0f;
         prevSteer = 0f;
         timeSinceLastDetection = 0f;
-        lastKnownBallDirection = 0f;
+        lastKnownTargetDirection = 0f;
+        wasTargetVisibleLastFrame = false;
+        previousTargetQuality = 0f;
         
-        // Отключаем интерполяцию для телепорта без визуальных глитчей
         rb.interpolation = RigidbodyInterpolation.None; 
-
         transform.localPosition = startPosition; 
-        transform.localRotation = startRotation; // <-- СБРАСЫВАЕМ ПОВОРОТ ТУТ!
-
+        transform.localRotation = startRotation; 
         rb.position = transform.position; 
-        rb.rotation = transform.rotation;        // <-- СБРАСЫВАЕМ ПОВОРОТ ДЛЯ RIGIDBODY!
-
+        rb.rotation = transform.rotation;        
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-        // 3. Поиск мяча на арене (С защитой от пустых ссылок)
-        targetBall = null; // ОБЯЗАТЕЛЬНО СБРАСЫВАЕМ ССЫЛКУ ПЕРЕД ПОИСКОМ!
-        Transform arena = transform.parent; 
-        if (arena != null) 
+        if (arenaManager != null)
         {
-            if (virtualSensors == null)
-            {
-                Debug.LogError($"[RobotAgent] У робота {gameObject.name} не назначен VirtualSensors! Поиск мяча невозможен.");
-                return;
-            }
-
-            foreach (Transform child in arena)
-            {
-                if (child.CompareTag(virtualSensors.ballTag))
-                {
-                    targetBall = child.gameObject;
-                    break;
-                }
-            }
-        }
-        else
-        {
-            Debug.LogError("Ошибка: У агента нет родительского объекта (Арены)!");
+            arenaManager.ResetArena();
+            targetBall = arenaManager.targetBall;
+            targetCube = arenaManager.targetCube; 
         }
 
-        // 4. Спавн мяча в новой позиции
-        if (targetBall != null)
-        {
-            float randomX = Random.Range(-spawnAreaWidth, spawnAreaWidth);
-            float randomZ = Random.Range(-spawnAreaLength, spawnAreaLength);
-            targetBall.transform.localPosition = new Vector3(randomX, ballSpawnHeight, randomZ);
-
-            Rigidbody ballRb = targetBall.GetComponent<Rigidbody>();
-            if (ballRb != null)
-            {
-                ballRb.linearVelocity = Vector3.zero;
-                ballRb.angularVelocity = Vector3.zero;
-            }
-
-            // Считаем дистанцию от центра клешни, а не от центра робота
-            if (gripperController != null && gripperController.holdPoint != null)
-            {
-                previousDistanceToBall = Vector3.Distance(gripperController.holdPoint.position, targetBall.transform.position);
-            }
-            
-            previousCameraOffset = 1f; // Сброс камеры
-        }
+        UpdateTargetMetrics(true); 
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        if (yoloCamera != null && yoloCamera.isBallVisible)
+        YoloTargetInfo ballInfo = yoloCamera != null ? yoloCamera.GetTarget(ballTag) : null;
+        YoloTargetInfo cubeInfo = yoloCamera != null ? yoloCamera.GetTarget(cubeTag) : null;
+
+        bool hasBallInSensors = virtualSensors != null && virtualSensors.isBallInGripper;
+        YoloTargetInfo currentTargetInfo = hasBallInSensors ? cubeInfo : ballInfo;
+        
+        if (currentTargetInfo != null && currentTargetInfo.isVisible)
         {
-            lastKnownBallDirection = yoloCamera.horizontalOffset;
             timeSinceLastDetection = 0f;
+            lastKnownTargetDirection = currentTargetInfo.horizontalOffset; 
         }
         else
         {
@@ -161,13 +128,15 @@ public class RobotAgent : Agent
         sensor.AddObservation(virtualSensors != null ? virtualSensors.ultrasoundValue : 1f);
         sensor.AddObservation(virtualSensors != null ? virtualSensors.leftIRObstacle : 0);
         sensor.AddObservation(virtualSensors != null ? virtualSensors.rightIRObstacle : 0);
-        sensor.AddObservation(virtualSensors != null && virtualSensors.isBallInGripper ? 1f : 0f);
+        sensor.AddObservation(hasBallInSensors ? 1f : 0f); 
 
-        sensor.AddObservation(yoloCamera != null ? yoloCamera.horizontalOffset : 0f);
-        sensor.AddObservation(yoloCamera != null ? yoloCamera.normalizedDistance : 1f);
-        
-        sensor.AddObservation(lastKnownBallDirection);
-        sensor.AddObservation(yoloCamera != null && yoloCamera.isBallVisible ? 1f : 0f);
+        sensor.AddObservation(ballInfo != null && ballInfo.isVisible ? 1f : 0f);
+        sensor.AddObservation(ballInfo != null ? ballInfo.horizontalOffset : 0f);
+        sensor.AddObservation(ballInfo != null ? ballInfo.normalizedDistance : 1f);
+
+        sensor.AddObservation(cubeInfo != null && cubeInfo.isVisible ? 1f : 0f);
+        sensor.AddObservation(cubeInfo != null ? cubeInfo.horizontalOffset : 0f);
+        sensor.AddObservation(cubeInfo != null ? cubeInfo.normalizedDistance : 1f);
 
         float headNorm = 0f;
         if (trackController != null && trackController.headPlatform != null)
@@ -178,12 +147,7 @@ public class RobotAgent : Agent
         }
         sensor.AddObservation(headNorm);
 
-        sensor.AddObservation(gripperController != null && gripperController.IsHoldingBall() ? 1f : 0f);
-
-        Vector3 offset = transform.localPosition - startPosition;
-        sensor.AddObservation(offset.x);
-        sensor.AddObservation(offset.z);
-        sensor.AddObservation(transform.localEulerAngles.y / 360f);
+        sensor.AddObservation(lastKnownTargetDirection); 
         sensor.AddObservation(rb.linearVelocity.magnitude);
         sensor.AddObservation(Mathf.Clamp(timeSinceLastDetection, 0f, 10f) / 10f);
     }
@@ -196,56 +160,55 @@ public class RobotAgent : Agent
         int clawAction    = actions.DiscreteActions[0];
 
         if (trackController != null)
-        {
             trackController.SetInputs(gasSignal, steerSignal, headSignal);
-        }
+        
         ControlClaw(clawAction);
-
         CalculateRewards(gasSignal, steerSignal);
         CheckTerminalConditions();
 
-        // --- ПРОВЕРКА НА ТАЙМ-АУТ ---
-        // Если мы достигли предпоследнего шага (StepCount >= MaxStep - 1), 
-        // и эпизод еще не завершен победой или аварией - засчитываем провал.
+        // НОВОЕ: Проверка на таймаут (если шаги закончились, а робот ничего не сделал)
         if (!isEpisodeResolved && MaxStep > 0 && StepCount >= MaxStep - 1)
         {
-            // Отправляем 0 (Провал - закончилось время)
-            Academy.Instance.StatsRecorder.Add("Custom/Success Rate", 0f, StatAggregationMethod.Average);
-            isEpisodeResolved = true;
+            SendStatsToTensorBoard(false); // Отправляем статистику провала
         }
+    }
+
+    // НОВОЕ: Единый метод для отправки метрик в TensorBoard
+    private void SendStatsToTensorBoard(bool isSuccess)
+    {
+        if (isEpisodeResolved) return; // Защита от двойной отправки
+        
+        // Отправляем 1 (100%) если событие случилось, и 0 (0%) если нет. 
+        Academy.Instance.StatsRecorder.Add("Custom/1_Grabbed_Ball_Rate", hasGrabbedBall ? 1f : 0f, StatAggregationMethod.Average);
+        Academy.Instance.StatsRecorder.Add("Custom/2_Reached_Cube_Rate", isSuccess ? 1f : 0f, StatAggregationMethod.Average);
+        
+        isEpisodeResolved = true;
     }
 
     private void CalculateRewards(float gasSignal, float steerSignal)
     {
-        // 1. Дельта-награда за сближение КЛЕШНИ с мячом
-        if (targetBall != null && gripperController != null && gripperController.holdPoint != null && !gripperController.IsHoldingBall())
+        bool isHoldingBall = gripperController != null && gripperController.IsHoldingBall();
+        
+        if (isHoldingBall && !phaseTwoActive)
         {
-            float currentDist = Vector3.Distance(gripperController.holdPoint.position, targetBall.transform.position);
-            float delta = previousDistanceToBall - currentDist;
-            
-            // Убрали if (delta > 0). Теперь приближение дает плюс, а отдаление - минус. Фармить не выйдет.
-            AddReward(delta * rewardDistanceMultiplier);
-            
-            previousDistanceToBall = currentDist;
+            phaseTwoActive = true;
+            lastKnownTargetDirection = 0f; 
+            UpdateTargetMetrics(true); 
+        }
+        else if (!isHoldingBall && phaseTwoActive)
+        {
+            phaseTwoActive = false;
+            lastKnownTargetDirection = 0f; 
+            UpdateTargetMetrics(true); 
         }
 
-        // 2. Дельта-награда за центрирование камеры (YOLO)
-        if (targetBall != null && yoloCamera != null && yoloCamera.isBallVisible)
+        UpdateTargetMetrics(false); 
+
+        if (isHoldingBall)
         {
-            float currentOffset = Mathf.Abs(yoloCamera.horizontalOffset);
-            float deltaOffset = previousCameraOffset - currentOffset;
-            
-            // Аналогично: улучшение центра дает плюс, ухудшение - минус.
-            AddReward(deltaOffset * rewardCentering);
-            
-            previousCameraOffset = currentOffset;
-        }
-        else
-        {
-            previousCameraOffset = 1f; 
+            AddReward(rewardHoldBallStep);
         }
 
-        // 3. Штраф за резкость управления
         float gasJerk = Mathf.Abs(gasSignal - prevGas);
         float steerJerk = Mathf.Abs(steerSignal - prevSteer);
         AddReward(-(gasJerk + steerJerk) * penaltyJerkMultiplier);
@@ -253,32 +216,93 @@ public class RobotAgent : Agent
         prevGas = gasSignal;
         prevSteer = steerSignal;
 
-        // 4. Штрафы с датчиков (столкновения)
         if (virtualSensors != null)
         {
             if (virtualSensors.ultrasoundValue < 0.2f) AddReward(penaltyUltrasound);
             if (virtualSensors.leftIRObstacle == 1 || virtualSensors.rightIRObstacle == 1) AddReward(penaltyIRObstacle);
         }
 
-        // 5. Штраф за прокрастинацию
-        // Переменная rewardTimePenalty уже отрицательная (-0.002f), поэтому просто плюсуем её.
         AddReward(rewardTimePenalty);
+    }
+    
+    private void UpdateTargetMetrics(bool forceReset)
+    {
+        bool isHoldingBall = gripperController != null && gripperController.IsHoldingBall();
+        GameObject currentPhysicalTarget = isHoldingBall ? targetCube : targetBall;
+        string currentTag = isHoldingBall ? cubeTag : ballTag;
+
+        float distanceReward = 0f;
+        float alignmentReward = 0f;
+
+        if (currentPhysicalTarget != null)
+        {
+            if (gripperController != null && gripperController.holdPoint != null)
+            {
+                float currentDist = Vector3.Distance(gripperController.holdPoint.position, currentPhysicalTarget.transform.position);
+                if (!forceReset)
+                {
+                    float delta = previousDistanceToTarget - currentDist;
+                    distanceReward = delta * rewardDistanceMultiplier;
+                    AddReward(distanceReward);
+                }
+                previousDistanceToTarget = currentDist;
+            }
+
+            YoloTargetInfo targetInfo = yoloCamera != null ? yoloCamera.GetTarget(currentTag) : null;
+            if (targetInfo != null && targetInfo.isVisible)
+            {
+                float cameraFactor = 1f - Mathf.Abs(targetInfo.horizontalOffset);
+                
+                Vector3 dirToTarget = currentPhysicalTarget.transform.position - transform.position;
+                dirToTarget.y = 0; 
+                float angle = Vector3.Angle(transform.forward, dirToTarget);
+                
+                float bodyFactor = 0f;
+                if (angle <= 20f) bodyFactor = 1f - (angle / 20f); 
+                
+                float distXZ = dirToTarget.magnitude;
+                float distanceFactor = 1f / (1f + distXZ); 
+                
+                float currentQuality = cameraFactor * bodyFactor * distanceFactor;
+                
+                if (!forceReset && wasTargetVisibleLastFrame)
+                {
+                    float deltaQuality = currentQuality - previousTargetQuality;
+                    alignmentReward = deltaQuality * rewardCentering;
+                    AddReward(alignmentReward);
+                }
+                
+                previousTargetQuality = currentQuality;
+                wasTargetVisibleLastFrame = true;
+            }
+            else
+            {
+                previousTargetQuality = 0f; 
+                wasTargetVisibleLastFrame = false;
+            }
+        }
     }
 
     private void CheckTerminalConditions()
     {
-        if (gripperController != null && gripperController.IsHoldingBall())
+        if (targetBall != null && targetCube != null && gripperController != null && !gripperController.IsHoldingBall())
         {
-            AddReward(rewardGoalReached);
-            
-            if (!isEpisodeResolved)
+            Vector3 ballPos = targetBall.transform.position;
+            ballPos.y = 0; 
+
+            Collider cubeCollider = targetCube.GetComponent<Collider>();
+            Vector3 closestPoint = cubeCollider != null ? cubeCollider.ClosestPoint(targetBall.transform.position) : targetCube.transform.position;
+            closestPoint.y = 0; 
+
+            float dist = Vector3.Distance(ballPos, closestPoint);
+
+            if (dist <= victoryDistance)
             {
-                // Отправляем 1 (Успех)
-                Academy.Instance.StatsRecorder.Add("Custom/Success Rate", 1f, StatAggregationMethod.Average);
-                isEpisodeResolved = true;
+                AddReward(rewardGoalReached);
+                SendStatsToTensorBoard(true); // НОВОЕ: Отправка статистики успеха
+                Debug.Log($"<color=green>[УСПЕХ]</color> Мяч доставлен на базу! (Дистанция до стенки: {dist:F2})");
+                EndEpisode();
             }
-            
-            EndEpisode();
         }
     }
 
@@ -286,27 +310,41 @@ public class RobotAgent : Agent
     {
         if (gripperController == null || virtualSensors == null) return;
 
-        if (action == 1) // Закрыть
+        if (action == 1) // Закрыть клешню
         {
             if (virtualSensors.isBallInGripper && targetBall != null)
             {
                 gripperController.GrabBall(targetBall);
+                hasGrabbedBall = true; // НОВОЕ: Фиксируем успешный захват мяча для статистики
             }
             else if (!gripperController.IsHoldingBall())
             {
-                // Применяем штраф только если галочка включена
-                if (penalizeEmptyGrab)
-                {
-                    AddReward(penaltyEmptyGrab);
-                }
+                if (penalizeEmptyGrab) AddReward(penaltyEmptyGrab);
             }
         }
-        else if (action == 2) // Открыть
+        else if (action == 2) // Открыть клешню
         {
             if (gripperController.IsHoldingBall())
             {
                 gripperController.ReleaseBall();
-                AddReward(penaltyDropBall); 
+                
+                if (targetCube != null && targetBall != null)
+                {
+                    Vector3 ballPos = targetBall.transform.position;
+                    ballPos.y = 0;
+                    
+                    Collider cubeCollider = targetCube.GetComponent<Collider>();
+                    Vector3 closestPoint = cubeCollider != null ? cubeCollider.ClosestPoint(targetBall.transform.position) : targetCube.transform.position;
+                    closestPoint.y = 0;
+
+                    float distToCubeXZ = Vector3.Distance(ballPos, closestPoint);
+                    
+                    if (distToCubeXZ > victoryDistance)
+                    {
+                        AddReward(penaltyDropBall); 
+                        Debug.Log($"<color=orange>[ШТРАФ]</color> Выронил мяч далеко от базы (Дистанция: {distToCubeXZ:F2} > {victoryDistance}). Можно попробовать дотолкать!");
+                    }
+                }
             }
         }
     }
@@ -331,8 +369,8 @@ public class RobotAgent : Agent
             if (kb.eKey.isPressed) headInput = 1f;
             else if (kb.qKey.isPressed) headInput = -1f;
 
-            if (kb.digit1Key.isPressed) discreteActionsOut[0] = 1;
-            else if (kb.digit2Key.isPressed) discreteActionsOut[0] = 2;
+            if (kb.digit1Key.isPressed) discreteActionsOut[0] = 1; 
+            else if (kb.digit2Key.isPressed) discreteActionsOut[0] = 2; 
             else discreteActionsOut[0] = 0;
         }
 
@@ -346,14 +384,7 @@ public class RobotAgent : Agent
         if (collision.gameObject.CompareTag("Obstacle"))
         {
             AddReward(penaltyCrash); 
-            
-            if (!isEpisodeResolved)
-            {
-                // Отправляем 0 (Провал - авария)
-                Academy.Instance.StatsRecorder.Add("Custom/Success Rate", 0f, StatAggregationMethod.Average);
-                isEpisodeResolved = true;
-            }
-            
+            SendStatsToTensorBoard(false); // НОВОЕ: Отправка статистики провала при аварии
             EndEpisode();     
         }
     }
