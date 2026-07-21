@@ -70,6 +70,30 @@ MonoBehaviour:
   targetVisibleMaxDistance: 1.85
   targetVisibleHorizontalFov: 40
   targetVisibleAnglePadding: 2
+  maxFloorTiltDegrees: 1.5
+  standardBallScaleRange: {x: 0.95, y: 1.05}
+  standardBallMassRange: {x: 0.85, y: 1.15}
+  ballFrictionScaleRange: {x: 0.7, y: 1.3}
+  ballBouncinessRange: {x: 0, y: 0.15}
+  ballLinearDampingRange: {x: 0, y: 0.05}
+  ballSpawnHeightJitterMeters: 0.005
+  finalTargetTransform: {fileID: 0}
+  createFinalTargetIfMissing: 1
+  finalTargetDefaultScale: {x: 0.2, y: 0.2, z: 0.2}
+  finalTargetScaleRange: {x: 0.9, y: 1.1}
+  finalTargetSpawnY: 0.1
+  finalTargetClearanceRadius: 0.45
+  randomizedObstacleCountRange: {x: 3, y: 10}
+  randomizedObstacleScaleRange: {x: 0.8, y: 1.2}
+  useMultipleBallTypes: 1
+  lightBallScaleRange: {x: 0.9, y: 0.97}
+  lightBallMassRange: {x: 0.7, y: 0.9}
+  heavyBallScaleRange: {x: 1.03, y: 1.1}
+  heavyBallMassRange: {x: 1.1, y: 1.3}
+  useProceduralFloorTextures: 1
+  partialOcclusionProbability: 0.3
+  redDistractorCountRange: {x: 0, y: 3}
+  redDistractorSizeRange: {x: 0.08, y: 0.22}
 --- !u!1 &1610754090654904192
 GameObject:
   m_ObjectHideFlags: 0
@@ -1290,6 +1314,8 @@ MonoBehaviour:
     m_Bits: 4294967295
   maxDetectionDistance: 2
   horizontalFov: 40
+  requiredVisibleSampleFraction: 0.4
+  sampleRadiusScale: 0.75
 --- !u!1 &4845123664573871081
 GameObject:
   m_ObjectHideFlags: 0
@@ -2265,6 +2291,28 @@ MonoBehaviour:
   obstacleScaleRange: {x: 0.75, y: 1.2}
   minActionLatencyDecisions: 1
   maxActionLatencyDecisions: 4
+  enableP1Randomization: 1
+  centerOfMassHorizontalFraction: 0.04
+  centerOfMassVerticalFraction: 0.05
+  dampingScaleRange: {x: 0.8, y: 1.2}
+  payloadCenterOfMassForwardMeters: 0.025
+  payloadCenterOfMassUpMeters: 0.015
+  brakingEfficiencyRange: {x: 0.8, y: 1.2}
+  commandDecayDecisionRange: {x: 0, y: 2}
+  motorResidualFractionRange: {x: 0, y: 0.05}
+  ultrasoundScaleRange: {x: 0.95, y: 1.05}
+  ultrasoundBiasMetersRange: {x: -0.02, y: 0.02}
+  ultrasoundMeasurementNoiseMeters: 0.01
+  ultrasoundQuantizationMetersRange: {x: 0.005, y: 0.02}
+  ultrasoundDropoutProbabilityRange: {x: 0.01, y: 0.05}
+  ultrasoundLatencyDecisionRange: {x: 0, y: 2}
+  irFalsePositiveProbabilityRange: {x: 0.01, y: 0.03}
+  irFalseNegativeProbabilityRange: {x: 0.01, y: 0.05}
+  irLatencyDecisionRange: {x: 0, y: 1}
+  enableP2Randomization: 1
+  batteryVoltageScaleRange: {x: 0.9, y: 1.05}
+  externalPushIntervalSecondsRange: {x: 4, y: 12}
+  externalPushImpulseRange: {x: 0.02, y: 0.08}
   enableRosBridge: 0
   rosPublishInterval: 0.05
   rosCommandTimeout: 0.5

@@ -24,6 +24,14 @@ public class TrackController : MonoBehaviour
     private Rigidbody rb;
     private float currentLeftPwm = 0f;
     private float currentRightPwm = 0f;
+    private float brakingEfficiency = 1f;
+    private float motorResidualFraction = 0f;
+    private float batteryVoltageScale = 1f;
+    private int commandDecaySteps = 0;
+    private int leftDecayStepsRemaining = 0;
+    private int rightDecayStepsRemaining = 0;
+    private bool leftStopRequested = false;
+    private bool rightStopRequested = false;
 
     public float MaxLinearCmd => maxLinearCmd;
     public float LeftPwmNormalized => NormalizePwm(currentLeftPwm);
@@ -31,7 +39,7 @@ public class TrackController : MonoBehaviour
     public float ForwardPwmNormalized => (LeftPwmNormalized + RightPwmNormalized) * 0.5f;
     public float TurnPwmNormalized => (LeftPwmNormalized - RightPwmNormalized) * 0.5f;
 
-    void Start()
+    void Awake()
     {
         rb = GetComponent<Rigidbody>();
         
@@ -59,8 +67,32 @@ public class TrackController : MonoBehaviour
         leftPwmTarget = ApplyMotorLogic(leftPwmTarget);
         rightPwmTarget = ApplyMotorLogic(rightPwmTarget);
 
-        currentLeftPwm = Mathf.MoveTowards(currentLeftPwm, leftPwmTarget, maxPwmStep);
-        currentRightPwm = Mathf.MoveTowards(currentRightPwm, rightPwmTarget, maxPwmStep);
+        leftPwmTarget = ApplyCommandDecay(
+            leftPwmTarget,
+            currentLeftPwm,
+            ref leftDecayStepsRemaining,
+            ref leftStopRequested
+        );
+        rightPwmTarget = ApplyCommandDecay(
+            rightPwmTarget,
+            currentRightPwm,
+            ref rightDecayStepsRemaining,
+            ref rightStopRequested
+        );
+
+        float accelerationStep = Mathf.Max(0.01f, maxPwmStep * batteryVoltageScale);
+        float brakingStep = accelerationStep * brakingEfficiency;
+
+        currentLeftPwm = Mathf.MoveTowards(
+            currentLeftPwm,
+            leftPwmTarget,
+            IsBraking(currentLeftPwm, leftPwmTarget) ? brakingStep : accelerationStep
+        );
+        currentRightPwm = Mathf.MoveTowards(
+            currentRightPwm,
+            rightPwmTarget,
+            IsBraking(currentRightPwm, rightPwmTarget) ? brakingStep : accelerationStep
+        );
     }
 
     private float NormalizePwm(float pwm)
@@ -80,13 +112,47 @@ public class TrackController : MonoBehaviour
         return Mathf.Sign(pwm) * Mathf.Max(absPwm, minMotorPwm);
     }
 
+    private float ApplyCommandDecay(
+        float targetPwm,
+        float currentPwm,
+        ref int decayStepsRemaining,
+        ref bool stopRequested)
+    {
+        if (Mathf.Abs(targetPwm) > 0.001f)
+        {
+            stopRequested = false;
+            decayStepsRemaining = 0;
+            return targetPwm;
+        }
+
+        if (!stopRequested)
+        {
+            stopRequested = true;
+            decayStepsRemaining = commandDecaySteps;
+        }
+
+        if (decayStepsRemaining <= 0 || Mathf.Abs(currentPwm) <= 0.001f)
+        {
+            return 0f;
+        }
+
+        decayStepsRemaining--;
+        return currentPwm * motorResidualFraction;
+    }
+
+    private static bool IsBraking(float currentPwm, float targetPwm)
+    {
+        return Mathf.Abs(targetPwm) < Mathf.Abs(currentPwm)
+            || (Mathf.Abs(currentPwm) > 0.001f && Mathf.Sign(targetPwm) != Mathf.Sign(currentPwm));
+    }
+
     void FixedUpdate()
     {
         float leftSpeed = currentLeftPwm / pwmMultiplier;
         float rightSpeed = currentRightPwm / pwmMultiplier;
 
-        float linearVelocity = (leftSpeed + rightSpeed) / 2f * moveSpeed;
-        float angularVelocity = (leftSpeed - rightSpeed) / 2f * turnSpeed;
+        float linearVelocity = (leftSpeed + rightSpeed) / 2f * moveSpeed * batteryVoltageScale;
+        float angularVelocity = (leftSpeed - rightSpeed) / 2f * turnSpeed * batteryVoltageScale;
 
         // Переводим локальный вектор коррекции направления в глобальные координаты физического тела
         Vector3 actualForward = rb.rotation * forwardDirection;
@@ -102,6 +168,23 @@ public class TrackController : MonoBehaviour
     {
         currentLeftPwm = 0f;
         currentRightPwm = 0f;
+        leftDecayStepsRemaining = 0;
+        rightDecayStepsRemaining = 0;
+        leftStopRequested = false;
+        rightStopRequested = false;
+    }
+
+    public void ConfigureEpisodeDynamics(
+        float episodeBrakingEfficiency,
+        int episodeCommandDecaySteps,
+        float episodeMotorResidualFraction,
+        float episodeBatteryVoltageScale)
+    {
+        brakingEfficiency = Mathf.Clamp(episodeBrakingEfficiency, 0.1f, 3f);
+        commandDecaySteps = Mathf.Clamp(episodeCommandDecaySteps, 0, 20);
+        motorResidualFraction = Mathf.Clamp(episodeMotorResidualFraction, 0f, 0.25f);
+        batteryVoltageScale = Mathf.Clamp(episodeBatteryVoltageScale, 0.5f, 1.5f);
+        ResetMotors();
     }
 
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class VirtualSensors : MonoBehaviour
@@ -47,6 +48,29 @@ public class VirtualSensors : MonoBehaviour
 
     public float UltrasoundDistanceMeters => ultrasoundValue * usMaxDistance;
 
+    private float rawUltrasoundValue = 1f;
+    private int rawCenterIRObstacle = 0;
+    private int rawLeftIRObstacle = 0;
+    private int rawRightIRObstacle = 0;
+    private bool rawBallInGripper = false;
+
+    private bool noiseEnabled = false;
+    private float ultrasoundScale = 1f;
+    private float ultrasoundBiasMeters = 0f;
+    private float ultrasoundNoiseMeters = 0f;
+    private float ultrasoundQuantizationMeters = 0f;
+    private float ultrasoundDropoutProbability = 0f;
+    private int ultrasoundLatencySteps = 0;
+    private float irFalsePositiveProbability = 0f;
+    private float irFalseNegativeProbability = 0f;
+    private int irLatencySteps = 0;
+
+    private readonly Queue<float> ultrasoundLatencyBuffer = new Queue<float>();
+    private readonly Queue<int> centerIrLatencyBuffer = new Queue<int>();
+    private readonly Queue<int> leftIrLatencyBuffer = new Queue<int>();
+    private readonly Queue<int> rightIrLatencyBuffer = new Queue<int>();
+    private readonly Queue<bool> gripperIrLatencyBuffer = new Queue<bool>();
+
     private void Awake()
     {
         if (robotRoot == null)
@@ -60,6 +84,7 @@ public class VirtualSensors : MonoBehaviour
         UpdateUltrasound();
         UpdateObstacleIR();
         UpdateGripperIR();
+        PublishSensorReadings();
     }
 
     /// <summary>
@@ -67,6 +92,7 @@ public class VirtualSensors : MonoBehaviour
     /// </summary>
     private void UpdateUltrasound()
     {
+        rawUltrasoundValue = 1f;
         if (centerPoint == null) return;
 
         float minDistance = usMaxDistance;
@@ -119,7 +145,7 @@ public class VirtualSensors : MonoBehaviour
         }
 
         // Нормализуем значение: 0 (вплотную) до 1 (чисто)
-        ultrasoundValue = minDistance / usMaxDistance;
+        rawUltrasoundValue = minDistance / Mathf.Max(0.001f, usMaxDistance);
     }
 
     /// <summary>
@@ -127,9 +153,9 @@ public class VirtualSensors : MonoBehaviour
     /// </summary>
     private void UpdateObstacleIR()
     {
-        centerIRObstacle = CheckSingleIR(centerIRPoint, irObstacleDistance, Color.orange) ? 1 : 0;
-        leftIRObstacle = CheckSingleIR(leftIRPoint, irObstacleDistance, Color.orange) ? 1 : 0;
-        rightIRObstacle = CheckSingleIR(rightIRPoint, irObstacleDistance, Color.orange) ? 1 : 0;
+        rawCenterIRObstacle = CheckSingleIR(centerIRPoint, irObstacleDistance, Color.orange) ? 1 : 0;
+        rawLeftIRObstacle = CheckSingleIR(leftIRPoint, irObstacleDistance, Color.orange) ? 1 : 0;
+        rawRightIRObstacle = CheckSingleIR(rightIRPoint, irObstacleDistance, Color.orange) ? 1 : 0;
     }
 
     /// <summary>
@@ -137,6 +163,7 @@ public class VirtualSensors : MonoBehaviour
     /// </summary>
     private void UpdateGripperIR()
     {
+        rawBallInGripper = false;
         if (gripperIRPoint == null) return;
 
         Vector3 origin = gripperIRPoint.position;
@@ -164,13 +191,155 @@ public class VirtualSensors : MonoBehaviour
 
         if (!float.IsPositiveInfinity(closestBallDistance))
         {
-            isBallInGripper = true;
+            rawBallInGripper = true;
             Debug.DrawRay(origin, direction * closestBallDistance, Color.magenta);
             return;
         }
 
-        isBallInGripper = false;
         Debug.DrawRay(origin, direction * irGripperDistance, Color.gray);
+    }
+
+    private void PublishSensorReadings()
+    {
+        float measuredDistance = Mathf.Clamp01(rawUltrasoundValue) * Mathf.Max(0.001f, usMaxDistance);
+        if (noiseEnabled)
+        {
+            if (Random.value < ultrasoundDropoutProbability)
+            {
+                measuredDistance = usMaxDistance;
+            }
+            else
+            {
+                measuredDistance = measuredDistance * ultrasoundScale
+                    + ultrasoundBiasMeters
+                    + Random.Range(-ultrasoundNoiseMeters, ultrasoundNoiseMeters);
+
+                if (ultrasoundQuantizationMeters > 0.0001f)
+                {
+                    measuredDistance = Mathf.Round(measuredDistance / ultrasoundQuantizationMeters)
+                        * ultrasoundQuantizationMeters;
+                }
+            }
+        }
+
+        float measuredUltrasound = Mathf.Clamp01(measuredDistance / Mathf.Max(0.001f, usMaxDistance));
+        int measuredCenterIr = ApplyIrNoise(rawCenterIRObstacle != 0) ? 1 : 0;
+        int measuredLeftIr = ApplyIrNoise(rawLeftIRObstacle != 0) ? 1 : 0;
+        int measuredRightIr = ApplyIrNoise(rawRightIRObstacle != 0) ? 1 : 0;
+        bool measuredGripperIr = ApplyIrNoise(rawBallInGripper);
+
+        ultrasoundValue = GetDelayedValue(
+            ultrasoundLatencyBuffer,
+            measuredUltrasound,
+            noiseEnabled ? ultrasoundLatencySteps : 0,
+            1f
+        );
+        centerIRObstacle = GetDelayedValue(
+            centerIrLatencyBuffer,
+            measuredCenterIr,
+            noiseEnabled ? irLatencySteps : 0,
+            0
+        );
+        leftIRObstacle = GetDelayedValue(
+            leftIrLatencyBuffer,
+            measuredLeftIr,
+            noiseEnabled ? irLatencySteps : 0,
+            0
+        );
+        rightIRObstacle = GetDelayedValue(
+            rightIrLatencyBuffer,
+            measuredRightIr,
+            noiseEnabled ? irLatencySteps : 0,
+            0
+        );
+        isBallInGripper = GetDelayedValue(
+            gripperIrLatencyBuffer,
+            measuredGripperIr,
+            noiseEnabled ? irLatencySteps : 0,
+            false
+        );
+    }
+
+    private bool ApplyIrNoise(bool rawValue)
+    {
+        if (!noiseEnabled)
+        {
+            return rawValue;
+        }
+
+        if (rawValue)
+        {
+            return Random.value >= irFalseNegativeProbability;
+        }
+
+        return Random.value < irFalsePositiveProbability;
+    }
+
+    private static T GetDelayedValue<T>(
+        Queue<T> buffer,
+        T currentValue,
+        int latencySteps,
+        T initialValue)
+    {
+        if (latencySteps <= 0)
+        {
+            buffer.Clear();
+            return currentValue;
+        }
+
+        buffer.Enqueue(currentValue);
+        if (buffer.Count <= latencySteps)
+        {
+            return initialValue;
+        }
+
+        return buffer.Dequeue();
+    }
+
+    public void ConfigureEpisodeNoise(
+        bool enabled,
+        float episodeUltrasoundScale,
+        float episodeUltrasoundBiasMeters,
+        float episodeUltrasoundNoiseMeters,
+        float episodeUltrasoundQuantizationMeters,
+        float episodeUltrasoundDropoutProbability,
+        int episodeUltrasoundLatencySteps,
+        float episodeIrFalsePositiveProbability,
+        float episodeIrFalseNegativeProbability,
+        int episodeIrLatencySteps)
+    {
+        noiseEnabled = enabled;
+        ultrasoundScale = enabled ? Mathf.Clamp(episodeUltrasoundScale, 0.5f, 1.5f) : 1f;
+        ultrasoundBiasMeters = enabled ? Mathf.Clamp(episodeUltrasoundBiasMeters, -0.25f, 0.25f) : 0f;
+        ultrasoundNoiseMeters = enabled ? Mathf.Max(0f, episodeUltrasoundNoiseMeters) : 0f;
+        ultrasoundQuantizationMeters = enabled ? Mathf.Max(0f, episodeUltrasoundQuantizationMeters) : 0f;
+        ultrasoundDropoutProbability = enabled
+            ? Mathf.Clamp01(episodeUltrasoundDropoutProbability)
+            : 0f;
+        ultrasoundLatencySteps = enabled ? Mathf.Max(0, episodeUltrasoundLatencySteps) : 0;
+        irFalsePositiveProbability = enabled
+            ? Mathf.Clamp01(episodeIrFalsePositiveProbability)
+            : 0f;
+        irFalseNegativeProbability = enabled
+            ? Mathf.Clamp01(episodeIrFalseNegativeProbability)
+            : 0f;
+        irLatencySteps = enabled ? Mathf.Max(0, episodeIrLatencySteps) : 0;
+
+        ClearLatencyBuffers();
+        ultrasoundValue = 1f;
+        centerIRObstacle = 0;
+        leftIRObstacle = 0;
+        rightIRObstacle = 0;
+        isBallInGripper = false;
+    }
+
+    private void ClearLatencyBuffers()
+    {
+        ultrasoundLatencyBuffer.Clear();
+        centerIrLatencyBuffer.Clear();
+        leftIrLatencyBuffer.Clear();
+        rightIrLatencyBuffer.Clear();
+        gripperIrLatencyBuffer.Clear();
     }
 
     /// <summary>

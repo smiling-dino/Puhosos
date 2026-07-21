@@ -13,7 +13,13 @@ public class SimulatedYoloCamera : MonoBehaviour
     [SerializeField] private float maxDetectionDistance = 2.0f; // Дальность видимости камеры
     [SerializeField] private float horizontalFov = 40f;         // Угол обзора по горизонтали
 
+    [Header("Partial Occlusion")]
+    [SerializeField, Range(0.1f, 1f)] private float requiredVisibleSampleFraction = 0.4f;
+    [SerializeField, Range(0.1f, 1f)] private float sampleRadiusScale = 0.75f;
+
     private Camera cam;
+    private readonly Vector3[] visibilitySamples = new Vector3[5];
+    private readonly RaycastHit[] visibilityHits = new RaycastHit[32];
 
     public float MaxDetectionDistance => maxDetectionDistance;
     public float HorizontalFov => horizontalFov;
@@ -50,18 +56,71 @@ public class SimulatedYoloCamera : MonoBehaviour
         if (float.IsNaN(angle) || float.IsInfinity(angle)) return false;
         if (angle > (horizontalFov / 2f)) return false;
 
-        // 3. Проверка преград. Игнорируются только корпус, внутри которого стоит камера,
-        // и целевой мяч. Все остальные коллайдеры, включая части робота, перекрывают обзор.
-        RaycastHit[] hits = Physics.RaycastAll(
+        // 3. Несколько лучей позволяют отличать частичное перекрытие от полного.
+        Vector3[] samples = GetTargetVisibilitySamples();
+        int requiredVisibleSamples = Mathf.Clamp(
+            Mathf.CeilToInt(samples.Length * requiredVisibleSampleFraction),
+            1,
+            samples.Length
+        );
+        int visibleSamples = 0;
+
+        foreach (Vector3 sample in samples)
+        {
+            if (HasLineOfSight(sample))
+            {
+                visibleSamples++;
+                if (visibleSamples >= requiredVisibleSamples)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private Vector3[] GetTargetVisibilitySamples()
+    {
+        Collider targetCollider = targetBall.GetComponentInChildren<Collider>();
+        Vector3 center = targetCollider != null ? targetCollider.bounds.center : targetBall.position;
+        float radius = 0.01f;
+        if (targetCollider != null)
+        {
+            Vector3 extents = targetCollider.bounds.extents;
+            radius = Mathf.Max(0.005f, Mathf.Min(extents.x, Mathf.Min(extents.y, extents.z)));
+        }
+
+        float offset = radius * sampleRadiusScale;
+        visibilitySamples[0] = center;
+        visibilitySamples[1] = center + transform.right * offset;
+        visibilitySamples[2] = center - transform.right * offset;
+        visibilitySamples[3] = center + transform.up * offset;
+        visibilitySamples[4] = center - transform.up * offset;
+        return visibilitySamples;
+    }
+
+    private bool HasLineOfSight(Vector3 targetPoint)
+    {
+        Vector3 offset = targetPoint - transform.position;
+        float distance = offset.magnitude;
+        if (distance <= 0.0001f)
+        {
+            return true;
+        }
+
+        int hitCount = Physics.RaycastNonAlloc(
             transform.position,
-            directionToBall,
+            offset / distance,
+            visibilityHits,
             distance,
             obstacleLayers,
             QueryTriggerInteraction.Ignore
         );
 
-        foreach (RaycastHit hit in hits)
+        for (int i = 0; i < hitCount; i++)
         {
+            RaycastHit hit = visibilityHits[i];
             if (hit.collider == cameraHostCollider || IsTargetCollider(hit.transform))
             {
                 continue;
@@ -103,7 +162,7 @@ public class SimulatedYoloCamera : MonoBehaviour
     /// </summary>
     public float GetNormalizedHorizontalAngle()
     {
-        if (!IsBallVisible()) return 0f;
+        if (targetBall == null) return 0f;
 
         Vector3 viewportPos = cam.WorldToViewportPoint(targetBall.position);
         // Преобразуем диапазон [0, 1] в [-1, 1]
@@ -115,7 +174,7 @@ public class SimulatedYoloCamera : MonoBehaviour
     /// </summary>
     public float GetNormalizedDistance()
     {
-        if (!IsBallVisible() || targetBall == null) return 1f;
+        if (targetBall == null) return 1f;
 
         float distance = GetDistanceToBall();
         return Mathf.Clamp01(distance / maxDetectionDistance);
