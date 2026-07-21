@@ -61,18 +61,18 @@ public class RobotBrain : Agent
     [SerializeField] private float distancePotentialWeight = 0.15f;
     [SerializeField] private float bodyAlignmentPotentialWeight = 0.02f;
     [SerializeField] private float firstAcquisitionReward = 0.02f;
-    [SerializeField] private float captureZoneReward = 0.03f;
-    [SerializeField] private float confirmedGraspReward = 0.20f;
+    [SerializeField] private float captureZoneReward = 0.10f;
+    [SerializeField] private float confirmedGraspReward = 0.25f;
     [SerializeField] private float foldPotentialWeight = 0.03f;
     [SerializeField] private float liftPotentialWeight = 0.10f;
     [SerializeField] private float liftCompletedReward = 0.15f;
     [SerializeField] private float targetDistancePotentialWeight = 0.20f;
     [SerializeField] private float targetAlignmentPotentialWeight = 0.02f;
     [SerializeField] private float maxTargetDistanceForPotentialMeters = 2.0f;
-    [SerializeField] private float terminalSuccessReward = 1.0f;
-    [SerializeField] private float failedGraspPenalty = -0.03f;
+    [SerializeField] private float terminalSuccessReward = 2.0f;
+    [SerializeField] private float failedGraspPenalty = -0.0f;
     [SerializeField] private float ballLostBeforeCapturePenalty = -1.0f;
-    [SerializeField] private float droppedBallPenalty = -0.25f;
+    [SerializeField] private float droppedBallPenalty = -0.05f;
     [SerializeField] private float fallOrFlipPenalty = -1.0f;
     [SerializeField] private float timeoutPenalty = -0.5f;
 

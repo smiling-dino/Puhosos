@@ -3,13 +3,6 @@ env_settings:
   num_areas: 8
   timeout_wait: 120
 
-engine_settings:
-  no_graphics: true
-  time_scale: 20
-  target_frame_rate: -1
-
-torch_settings:
-  device: cuda
 
 environment_parameters:
   training_stage:
