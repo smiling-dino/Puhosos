@@ -22,31 +22,24 @@ public class GripperController : MonoBehaviour
 
     [Tooltip("Ось первого шарнира в координатах его родителя")]
     [FormerlySerializedAs("liftLocalAxis")]
-    [SerializeField] private Vector3 liftAxisInParentSpace = Vector3.forward;
+    [SerializeField] private Vector3 liftAxisInParentSpace =
+        Vector3.forward;
 
     [Tooltip("Автоматически определять ось второго шарнира")]
     [SerializeField] private bool autoDetectElbowAxis = true;
 
     [Tooltip("Ось второго шарнира в координатах его родителя")]
-    [SerializeField] private Vector3 elbowAxisInParentSpace = Vector3.forward;
+    [SerializeField] private Vector3 elbowAxisInParentSpace =
+        Vector3.forward;
 
     [Tooltip("Поворот нижнего звена вверх по диагонали")]
     [FormerlySerializedAs("raisedAngleDegrees")]
     [SerializeField, Range(-20f, 160f)]
-    private float shoulderFoldAngleDegrees = 60f;
+    private float shoulderFoldAngleDegrees = 160f;
 
     [Tooltip("Противоположный поворот второго звена")]
     [SerializeField, Range(-180f, 90f)]
-    private float elbowFoldAngleDegrees = -60f;
-
-    [Tooltip("Исправлять устаревшие углы 160/-180 на безопасную Z-позу")]
-    [SerializeField] private bool enforceSafeZFoldAngles = true;
-
-    [SerializeField, Range(-20f, 160f)]
-    private float safeShoulderFoldAngleDegrees = 60f;
-
-    [SerializeField, Range(-180f, 90f)]
-    private float safeElbowFoldAngleDegrees = -60f;
+    private float elbowFoldAngleDegrees = -180f;
 
     [Tooltip("Скорость складывания руки")]
     [SerializeField, Min(0.01f)]
@@ -57,10 +50,12 @@ public class GripperController : MonoBehaviour
     [SerializeField] private Transform rightClawPivot;
 
     [Tooltip("Локальная ось левой части клешни")]
-    [SerializeField] private Vector3 leftClawLocalAxis = Vector3.up;
+    [SerializeField] private Vector3 leftClawLocalAxis =
+        Vector3.up;
 
     [Tooltip("Локальная ось правой части клешни")]
-    [SerializeField] private Vector3 rightClawLocalAxis = Vector3.up;
+    [SerializeField] private Vector3 rightClawLocalAxis =
+        Vector3.up;
 
     [SerializeField] private float leftClosedAngleDegrees = 20f;
     [SerializeField] private float rightClosedAngleDegrees = -20f;
@@ -69,110 +64,112 @@ public class GripperController : MonoBehaviour
     [SerializeField, Min(0.01f)]
     private float gripNormalizedSpeed = 3f;
 
-    [Header("=== Удержание мяча ===")]
-    [Tooltip("Кинематическое удержание исключает взрывные импульсы FixedJoint при складывании руки")]
-    [SerializeField] private bool useKinematicAttachment = true;
-
-    [SerializeField, Min(0.1f)] private float holdJointBreakForce = 250f;
-    [SerializeField, Min(0.1f)] private float holdJointBreakTorque = 80f;
-    [SerializeField] private bool ignoreRobotCollisionsWhileHeld = true;
-
     [Header("=== Текущее состояние ===")]
-    [SerializeField, Range(0f, 1f)] private float liftNormalized;
-    [SerializeField, Range(0f, 1f)] private float gripNormalized;
-    [SerializeField] private bool targetClosed;
+    [SerializeField, Range(0f, 1f)]
+    private float liftNormalized;
+
+    [SerializeField, Range(0f, 1f)]
+    private float gripNormalized;
+
+    [SerializeField]
+    private bool targetClosed;
 
     private Quaternion liftBaseRotation;
     private Quaternion elbowBaseRotation;
     private Quaternion leftBaseRotation;
     private Quaternion rightBaseRotation;
 
-    private Vector3 resolvedLiftAxisInParentSpace = Vector3.forward;
-    private Vector3 resolvedElbowAxisInParentSpace = Vector3.forward;
+    private Vector3 resolvedLiftAxisInParentSpace =
+        Vector3.forward;
+
+    private Vector3 resolvedElbowAxisInParentSpace =
+        Vector3.forward;
 
     private bool defaultPoseCaptured;
-    private float reachableLiftHeightMeters;
     private float liftInput;
 
     private GameObject heldBall;
     private Rigidbody ballRigidbody;
-    private Rigidbody connectedRobotRigidbody;
-    private FixedJoint holdJoint;
-    private bool kinematicAttachmentActive;
-
-    private Collider[] ballColliders = new Collider[0];
-    private Collider[] robotColliders = new Collider[0];
+    private Collider ballCollider;
     private Transform originalBallParent;
-    private bool originalBallIsKinematic;
-    private bool originalBallUseGravity;
-    private RigidbodyInterpolation originalBallInterpolation;
-    private CollisionDetectionMode originalBallCollisionDetection;
 
-    public Transform HoldPoint => holdPoint;
-    public float ReachableLiftHeightMeters => reachableLiftHeightMeters;
     public bool IsClosed => targetClosed;
 
     public bool HasGripActuator =>
-        leftClawPivot != null && rightClawPivot != null;
+        leftClawPivot != null &&
+        rightClawPivot != null;
 
     public bool IsFullyClosed =>
-        HasGripActuator && targetClosed && gripNormalized >= 0.999f;
+        HasGripActuator &&
+        targetClosed &&
+        gripNormalized >= 0.999f;
 
     public bool IsFullyOpen =>
-        !targetClosed && gripNormalized <= 0.001f;
+        !targetClosed &&
+        gripNormalized <= 0.001f;
 
+    /*
+     * Для складывания обязательно нужны оба шарнира.
+     * Если Cube003ServoPivot не назначен, старый одиночный
+     * подъём выполняться не будет.
+     */
     public bool HasFoldActuator =>
-        liftPivot != null && elbowPivot != null;
+        liftPivot != null &&
+        elbowPivot != null;
 
+    // Совместимость с RobotBrain.
     public bool HasLiftActuator => HasFoldActuator;
+
     public float FoldNormalized => liftNormalized;
     public float LiftNormalized => liftNormalized;
     public float GripNormalized => gripNormalized;
-    public bool IsAtFoldedPose => liftNormalized >= 0.999f;
-    public bool IsAtExtendedPose => liftNormalized <= 0.001f;
-    public bool IsAtLiftTop => IsAtFoldedPose;
-    public bool IsAtLiftBottom => IsAtExtendedPose;
+
+    public bool IsAtFoldedPose =>
+        liftNormalized >= 0.999f;
+
+    public bool IsAtExtendedPose =>
+        liftNormalized <= 0.001f;
+
+    // Совместимость со старым RobotBrain.
+    public bool IsAtLiftTop =>
+        IsAtFoldedPose;
+
+    public bool IsAtLiftBottom =>
+        IsAtExtendedPose;
 
     private void Awake()
     {
+        /*
+         * Сначала ищем новые pivot-объекты.
+         * Только затем запоминаем исходные повороты.
+         */
         ResolvePivotReferences();
-        ApplySafeFoldAngles();
         CaptureDefaultPose();
         ResetMechanism();
-        MeasureReachableLiftHeight();
-        ResetMechanism();
+
         ValidateConfiguration();
     }
 
     private void OnValidate()
     {
+        /*
+         * Позволяет Unity автоматически заполнить ссылки
+         * ещё до запуска сцены.
+         */
         ResolvePivotReferences();
-        ApplySafeFoldAngles();
     }
 
     private void FixedUpdate()
     {
-        RefreshHeldBallState();
         UpdateGrip();
         UpdateArmFold();
         ApplyPose();
-        MaintainHeldBallPose();
-    }
-
-    private void ApplySafeFoldAngles()
-    {
-        if (!enforceSafeZFoldAngles)
-        {
-            return;
-        }
-
-        shoulderFoldAngleDegrees = safeShoulderFoldAngleDegrees;
-        elbowFoldAngleDegrees = safeElbowFoldAngleDegrees;
     }
 
     private void UpdateGrip()
     {
         float gripTarget = targetClosed ? 1f : 0f;
+
         gripNormalized = Mathf.MoveTowards(
             gripNormalized,
             gripTarget,
@@ -205,6 +202,12 @@ public class GripperController : MonoBehaviour
         targetClosed = closed;
     }
 
+    /*
+     * actionId:
+     * 0 — остановить руку;
+     * 1 — складывать буквой Z;
+     * 2 — раскладывать.
+     */
     public void SetFoldAction(int actionId)
     {
         if (!HasFoldActuator)
@@ -213,36 +216,34 @@ public class GripperController : MonoBehaviour
             return;
         }
 
-        switch (actionId)
+        if (actionId == 1)
         {
-            case 1:
-                liftInput = 1f;
-                break;
-            case 2:
-                liftInput = -1f;
-                break;
-            default:
-                liftInput = 0f;
-                break;
+            liftInput = 1f;
+        }
+        else if (actionId == 2)
+        {
+            liftInput = -1f;
+        }
+        else
+        {
+            liftInput = 0f;
         }
     }
 
+    /*
+     * Старое имя оставлено для RobotBrain.
+     * Теперь оно запускает складывание двух шарниров.
+     */
     public void SetLiftAction(int actionId)
     {
         SetFoldAction(actionId);
     }
 
-    public void SetFoldPoseNormalized(float normalized)
-    {
-        liftInput = 0f;
-        liftNormalized = Mathf.Clamp01(normalized);
-        ApplyPose();
-        MaintainHeldBallPose();
-    }
-
     public void ResetFold()
     {
-        SetFoldPoseNormalized(0f);
+        liftInput = 0f;
+        liftNormalized = 0f;
+        ApplyPose();
     }
 
     public void ResetLift()
@@ -261,24 +262,12 @@ public class GripperController : MonoBehaviour
         liftNormalized = 0f;
         gripNormalized = 0f;
         targetClosed = false;
-        ApplyPose();
-    }
 
-    public void PrepareHeldBallForTraining(GameObject ball, float initialFoldNormalized)
-    {
-        ReleaseBall();
-        targetClosed = true;
-        gripNormalized = 1f;
-        liftInput = 0f;
-        liftNormalized = Mathf.Clamp01(initialFoldNormalized);
         ApplyPose();
-        GrabBall(ball);
-        MaintainHeldBallPose();
     }
 
     public void GrabBall(GameObject ball)
     {
-        RefreshHeldBallState();
         if (heldBall != null || ball == null)
         {
             return;
@@ -286,232 +275,84 @@ public class GripperController : MonoBehaviour
 
         if (holdPoint == null)
         {
-            Debug.LogError("HoldPoint не назначен в GripperController", this);
-            return;
-        }
-
-        Rigidbody candidateBallRigidbody = ball.GetComponent<Rigidbody>();
-        Rigidbody candidateRobotRigidbody = GetComponentInParent<Rigidbody>();
-        if (candidateBallRigidbody == null)
-        {
-            Debug.LogError("Для захвата мячу нужен Rigidbody", this);
-            return;
-        }
-
-        if (!useKinematicAttachment && candidateRobotRigidbody == null)
-        {
-            Debug.LogError("Для режима FixedJoint корню робота нужен Rigidbody", this);
+            Debug.LogError(
+                "HoldPoint не назначен в GripperController",
+                this
+            );
             return;
         }
 
         heldBall = ball;
-        ballRigidbody = candidateBallRigidbody;
-        connectedRobotRigidbody = candidateRobotRigidbody;
+        ballRigidbody = heldBall.GetComponent<Rigidbody>();
+        ballCollider = heldBall.GetComponent<Collider>();
         originalBallParent = heldBall.transform.parent;
-        originalBallIsKinematic = ballRigidbody.isKinematic;
-        originalBallUseGravity = ballRigidbody.useGravity;
-        originalBallInterpolation = ballRigidbody.interpolation;
-        originalBallCollisionDetection = ballRigidbody.collisionDetectionMode;
 
-        ballColliders = heldBall.GetComponentsInChildren<Collider>(true);
-        robotColliders = connectedRobotRigidbody != null
-            ? connectedRobotRigidbody.GetComponentsInChildren<Collider>(true)
-            : GetComponentsInParent<Collider>(true);
-        SetRobotBallCollisionIgnored(ignoreRobotCollisionsWhileHeld);
-
-        if (useKinematicAttachment)
+        if (ballRigidbody != null)
         {
-            AttachKinematically();
-        }
-        else
-        {
-            AttachWithFixedJoint();
-        }
-    }
-
-    private void AttachKinematically()
-    {
-        if (heldBall == null || ballRigidbody == null || holdPoint == null)
-        {
-            return;
+            ballRigidbody.linearVelocity = Vector3.zero;
+            ballRigidbody.angularVelocity = Vector3.zero;
+            ballRigidbody.isKinematic = true;
         }
 
-        ballRigidbody.linearVelocity = Vector3.zero;
-        ballRigidbody.angularVelocity = Vector3.zero;
-        ballRigidbody.isKinematic = true;
-        ballRigidbody.useGravity = false;
+        if (ballCollider != null)
+        {
+            ballCollider.enabled = false;
+        }
+
         heldBall.transform.SetParent(holdPoint, false);
         heldBall.transform.localPosition = Vector3.zero;
         heldBall.transform.localRotation = Quaternion.identity;
-        kinematicAttachmentActive = true;
-        Physics.SyncTransforms();
-    }
-
-    private void AttachWithFixedJoint()
-    {
-        if (heldBall == null
-            || ballRigidbody == null
-            || connectedRobotRigidbody == null
-            || holdPoint == null)
-        {
-            return;
-        }
-
-        ballRigidbody.isKinematic = true;
-        ballRigidbody.position = holdPoint.position;
-        ballRigidbody.rotation = holdPoint.rotation;
-        Physics.SyncTransforms();
-
-        ballRigidbody.isKinematic = false;
-        ballRigidbody.useGravity = true;
-        ballRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
-        ballRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        ballRigidbody.linearVelocity = connectedRobotRigidbody.linearVelocity;
-        ballRigidbody.angularVelocity = connectedRobotRigidbody.angularVelocity;
-
-        holdJoint = heldBall.AddComponent<FixedJoint>();
-        holdJoint.connectedBody = connectedRobotRigidbody;
-        holdJoint.autoConfigureConnectedAnchor = false;
-        holdJoint.anchor = heldBall.transform.InverseTransformPoint(holdPoint.position);
-        holdJoint.connectedAnchor = connectedRobotRigidbody.transform.InverseTransformPoint(
-            holdPoint.position
-        );
-        holdJoint.breakForce = holdJointBreakForce;
-        holdJoint.breakTorque = holdJointBreakTorque;
-        holdJoint.enableCollision = false;
-        holdJoint.enablePreprocessing = true;
     }
 
     public void ReleaseBall()
     {
         liftInput = 0f;
-        DetachHeldBall(true);
+
+        if (heldBall == null)
+        {
+            return;
+        }
+
+        Transform targetParent =
+            originalBallParent != null
+                ? originalBallParent
+                : transform.parent;
+
+        heldBall.transform.SetParent(
+            targetParent,
+            true
+        );
+
+        if (ballCollider != null)
+        {
+            ballCollider.enabled = true;
+        }
+
+        if (ballRigidbody != null)
+        {
+            ballRigidbody.isKinematic = false;
+            ballRigidbody.linearVelocity = Vector3.zero;
+            ballRigidbody.angularVelocity = Vector3.zero;
+        }
+
+        heldBall = null;
+        ballRigidbody = null;
+        ballCollider = null;
+        originalBallParent = null;
     }
 
     public bool IsHoldingBall()
     {
-        RefreshHeldBallState();
-        return heldBall != null && (kinematicAttachmentActive || holdJoint != null);
+        return heldBall != null;
     }
 
-    private void RefreshHeldBallState()
+    public bool IsBallInsideCaptureZone(
+        GameObject ball,
+        float captureRadius
+    )
     {
-        if (heldBall == null)
-        {
-            ClearHeldBallReferences();
-            return;
-        }
-
-        if (kinematicAttachmentActive)
-        {
-            return;
-        }
-
-        if (holdJoint == null)
-        {
-            DetachHeldBall(false);
-        }
-    }
-
-    private void MaintainHeldBallPose()
-    {
-        if (heldBall == null || holdPoint == null)
-        {
-            return;
-        }
-
-        if (kinematicAttachmentActive)
-        {
-            if (heldBall.transform.parent != holdPoint)
-            {
-                heldBall.transform.SetParent(holdPoint, false);
-            }
-
-            heldBall.transform.localPosition = Vector3.zero;
-            heldBall.transform.localRotation = Quaternion.identity;
-            return;
-        }
-
-        if (holdJoint != null && connectedRobotRigidbody != null)
-        {
-            holdJoint.connectedAnchor = connectedRobotRigidbody.transform.InverseTransformPoint(
-                holdPoint.position
-            );
-        }
-    }
-
-    private void DetachHeldBall(bool resetVelocity)
-    {
-        GameObject ballToRelease = heldBall;
-        Rigidbody rigidbodyToRelease = ballRigidbody;
-
-        if (holdJoint != null)
-        {
-            Destroy(holdJoint);
-            holdJoint = null;
-        }
-
-        SetRobotBallCollisionIgnored(false);
-
-        if (ballToRelease != null)
-        {
-            Transform targetParent = originalBallParent != null
-                ? originalBallParent
-                : transform.parent;
-            ballToRelease.transform.SetParent(targetParent, true);
-        }
-
-        if (rigidbodyToRelease != null)
-        {
-            rigidbodyToRelease.isKinematic = originalBallIsKinematic;
-            rigidbodyToRelease.useGravity = originalBallUseGravity;
-            rigidbodyToRelease.interpolation = originalBallInterpolation;
-            rigidbodyToRelease.collisionDetectionMode = originalBallCollisionDetection;
-
-            if (resetVelocity)
-            {
-                rigidbodyToRelease.linearVelocity = Vector3.zero;
-                rigidbodyToRelease.angularVelocity = Vector3.zero;
-            }
-        }
-
-        ClearHeldBallReferences();
-    }
-
-    private void SetRobotBallCollisionIgnored(bool ignored)
-    {
-        foreach (Collider ballPart in ballColliders)
-        {
-            if (ballPart == null)
-            {
-                continue;
-            }
-
-            foreach (Collider robotPart in robotColliders)
-            {
-                if (robotPart != null && robotPart != ballPart)
-                {
-                    Physics.IgnoreCollision(ballPart, robotPart, ignored);
-                }
-            }
-        }
-    }
-
-    private void ClearHeldBallReferences()
-    {
-        heldBall = null;
-        ballRigidbody = null;
-        connectedRobotRigidbody = null;
-        holdJoint = null;
-        kinematicAttachmentActive = false;
-        ballColliders = new Collider[0];
-        robotColliders = new Collider[0];
-        originalBallParent = null;
-    }
-
-    public bool IsBallInsideCaptureZone(GameObject ball, float captureRadius)
-    {
-        return GetDistanceToHoldPoint(ball) <= captureRadius;
+        return GetDistanceToHoldPoint(ball)
+            <= captureRadius;
     }
 
     public float GetDistanceToHoldPoint(GameObject ball)
@@ -521,14 +362,27 @@ public class GripperController : MonoBehaviour
             return float.PositiveInfinity;
         }
 
-        Collider targetCollider = ball.GetComponent<Collider>();
-        if (targetCollider != null && targetCollider.enabled)
+        Collider targetCollider =
+            ball.GetComponent<Collider>();
+
+        if (targetCollider != null &&
+            targetCollider.enabled)
         {
-            Vector3 closestPoint = targetCollider.ClosestPoint(holdPoint.position);
-            return Vector3.Distance(holdPoint.position, closestPoint);
+            Vector3 closestPoint =
+                targetCollider.ClosestPoint(
+                    holdPoint.position
+                );
+
+            return Vector3.Distance(
+                holdPoint.position,
+                closestPoint
+            );
         }
 
-        return Vector3.Distance(holdPoint.position, ball.transform.position);
+        return Vector3.Distance(
+            holdPoint.position,
+            ball.transform.position
+        );
     }
 
     private void CaptureDefaultPose()
@@ -540,64 +394,45 @@ public class GripperController : MonoBehaviour
 
         if (liftPivot != null)
         {
-            liftBaseRotation = liftPivot.localRotation;
-            resolvedLiftAxisInParentSpace = ResolveAxisInParentSpace(
-                liftPivot,
-                autoDetectLiftAxis,
-                liftAxisInParentSpace,
-                "LiftServoPivot"
-            );
+            liftBaseRotation =
+                liftPivot.localRotation;
+
+            resolvedLiftAxisInParentSpace =
+                ResolveAxisInParentSpace(
+                    liftPivot,
+                    autoDetectLiftAxis,
+                    liftAxisInParentSpace,
+                    "LiftServoPivot"
+                );
         }
 
         if (elbowPivot != null)
         {
-            elbowBaseRotation = elbowPivot.localRotation;
-            resolvedElbowAxisInParentSpace = ResolveAxisInParentSpace(
-                elbowPivot,
-                autoDetectElbowAxis,
-                elbowAxisInParentSpace,
-                "Cube003ServoPivot"
-            );
+            elbowBaseRotation =
+                elbowPivot.localRotation;
+
+            resolvedElbowAxisInParentSpace =
+                ResolveAxisInParentSpace(
+                    elbowPivot,
+                    autoDetectElbowAxis,
+                    elbowAxisInParentSpace,
+                    "Cube003ServoPivot"
+                );
         }
 
         if (leftClawPivot != null)
         {
-            leftBaseRotation = leftClawPivot.localRotation;
+            leftBaseRotation =
+                leftClawPivot.localRotation;
         }
 
         if (rightClawPivot != null)
         {
-            rightBaseRotation = rightClawPivot.localRotation;
+            rightBaseRotation =
+                rightClawPivot.localRotation;
         }
 
         defaultPoseCaptured = true;
-    }
-
-    private void MeasureReachableLiftHeight()
-    {
-        if (!defaultPoseCaptured || holdPoint == null || !HasFoldActuator)
-        {
-            reachableLiftHeightMeters = 0f;
-            return;
-        }
-
-        float savedLiftNormalized = liftNormalized;
-
-        liftNormalized = 0f;
-        ApplyPose();
-        Physics.SyncTransforms();
-        float extendedY = holdPoint.position.y;
-
-        liftNormalized = 1f;
-        ApplyPose();
-        Physics.SyncTransforms();
-        float foldedY = holdPoint.position.y;
-
-        reachableLiftHeightMeters = Mathf.Max(0f, foldedY - extendedY);
-
-        liftNormalized = savedLiftNormalized;
-        ApplyPose();
-        Physics.SyncTransforms();
     }
 
     private void ApplyPose()
@@ -607,38 +442,66 @@ public class GripperController : MonoBehaviour
             return;
         }
 
+        /*
+         * Первый шарнир поднимает нижнее звено
+         * вверх по диагонали.
+         */
         if (liftPivot != null)
         {
-            Quaternion shoulderRotation = GetAxisRotation(
-                resolvedLiftAxisInParentSpace,
-                shoulderFoldAngleDegrees * liftNormalized
-            );
-            liftPivot.localRotation = shoulderRotation * liftBaseRotation;
+            Quaternion shoulderRotation =
+                GetAxisRotation(
+                    resolvedLiftAxisInParentSpace,
+                    shoulderFoldAngleDegrees *
+                    liftNormalized
+                );
+
+            liftPivot.localRotation =
+                shoulderRotation *
+                liftBaseRotation;
         }
 
+        /*
+         * Второй шарнир одновременно вращается
+         * в противоположную сторону.
+         *
+         * 60° и -60° взаимно компенсируются,
+         * поэтому верхнее звено остаётся почти
+         * горизонтальным — получается буква Z.
+         */
         if (elbowPivot != null)
         {
-            Quaternion elbowRotation = GetAxisRotation(
-                resolvedElbowAxisInParentSpace,
-                elbowFoldAngleDegrees * liftNormalized
-            );
-            elbowPivot.localRotation = elbowRotation * elbowBaseRotation;
+            Quaternion elbowRotation =
+                GetAxisRotation(
+                    resolvedElbowAxisInParentSpace,
+                    elbowFoldAngleDegrees *
+                    liftNormalized
+                );
+
+            elbowPivot.localRotation =
+                elbowRotation *
+                elbowBaseRotation;
         }
 
         if (leftClawPivot != null)
         {
-            leftClawPivot.localRotation = leftBaseRotation * GetAxisRotation(
-                leftClawLocalAxis,
-                leftClosedAngleDegrees * gripNormalized
-            );
+            leftClawPivot.localRotation =
+                leftBaseRotation *
+                GetAxisRotation(
+                    leftClawLocalAxis,
+                    leftClosedAngleDegrees *
+                    gripNormalized
+                );
         }
 
         if (rightClawPivot != null)
         {
-            rightClawPivot.localRotation = rightBaseRotation * GetAxisRotation(
-                rightClawLocalAxis,
-                rightClosedAngleDegrees * gripNormalized
-            );
+            rightClawPivot.localRotation =
+                rightBaseRotation *
+                GetAxisRotation(
+                    rightClawLocalAxis,
+                    rightClosedAngleDegrees *
+                    gripNormalized
+                );
         }
     }
 
@@ -646,32 +509,71 @@ public class GripperController : MonoBehaviour
         Transform pivot,
         bool autoDetectAxis,
         Vector3 configuredAxis,
-        string pivotName)
+        string pivotName
+    )
     {
-        Vector3 fallbackAxis = configuredAxis.sqrMagnitude > 0.000001f
-            ? configuredAxis.normalized
-            : Vector3.forward;
+        Vector3 fallbackAxis =
+            configuredAxis.sqrMagnitude > 0.000001f
+                ? configuredAxis.normalized
+                : Vector3.forward;
 
-        if (!autoDetectAxis || pivot == null || holdPoint == null)
+        if (!autoDetectAxis ||
+            pivot == null ||
+            holdPoint == null)
         {
             return fallbackAxis;
         }
 
-        Vector3 pivotToHoldPoint = holdPoint.position - pivot.position;
-        Vector3 worldFoldAxis = Vector3.Cross(pivotToHoldPoint, transform.up);
-        if (worldFoldAxis.sqrMagnitude < 0.000001f)
+        /*
+         * Направление от шарнира к клешне.
+         */
+        Vector3 pivotToHoldPoint =
+            holdPoint.position -
+            pivot.position;
+
+        /*
+         * Ось, перпендикулярная плоскости,
+         * образованной рукой и вертикалью робота.
+         *
+         * Благодаря этому рука поднимается вверх,
+         * а не поворачивается влево или вправо.
+         */
+        Vector3 worldFoldAxis =
+            Vector3.Cross(
+                pivotToHoldPoint,
+                transform.up
+            );
+
+        if (worldFoldAxis.sqrMagnitude <
+            0.000001f)
         {
             Debug.LogWarning(
-                $"Не удалось определить ось {pivotName}: шарнир и HoldPoint находятся на одной вертикали",
+                "Не удалось определить ось " +
+                pivotName +
+                ": шарнир и HoldPoint находятся " +
+                "на одной вертикали",
                 this
             );
+
             return fallbackAxis;
         }
 
         worldFoldAxis.Normalize();
-        return pivot.parent != null
-            ? pivot.parent.InverseTransformDirection(worldFoldAxis).normalized
-            : worldFoldAxis;
+
+        /*
+         * В ApplyPose вращение задаётся в координатах
+         * родителя pivot-объекта.
+         */
+        if (pivot.parent != null)
+        {
+            return pivot.parent
+                .InverseTransformDirection(
+                    worldFoldAxis
+                )
+                .normalized;
+        }
+
+        return worldFoldAxis;
     }
 
     private void ResolvePivotReferences()
@@ -681,8 +583,15 @@ public class GripperController : MonoBehaviour
             return;
         }
 
-        Transform namedLiftPivot = FindDescendantByName("LiftServoPivot");
-        Transform namedElbowPivot = FindDescendantByName("Cube003ServoPivot");
+        Transform namedLiftPivot =
+            FindDescendantByName(
+                "LiftServoPivot"
+            );
+
+        Transform namedElbowPivot =
+            FindDescendantByName(
+                "Cube003ServoPivot"
+            );
 
         if (namedLiftPivot != null)
         {
@@ -695,9 +604,15 @@ public class GripperController : MonoBehaviour
         }
     }
 
-    private Transform FindDescendantByName(string objectName)
+    private Transform FindDescendantByName(
+        string objectName
+    )
     {
-        Transform[] descendants = GetComponentsInChildren<Transform>(true);
+        Transform[] descendants =
+            GetComponentsInChildren<Transform>(
+                true
+            );
+
         foreach (Transform descendant in descendants)
         {
             if (descendant.name == objectName)
@@ -713,61 +628,75 @@ public class GripperController : MonoBehaviour
     {
         if (holdPoint == null)
         {
-            Debug.LogError("HoldPoint не назначен", this);
+            Debug.LogError(
+                "HoldPoint не назначен",
+                this
+            );
         }
 
         if (liftPivot == null)
         {
-            Debug.LogError("LiftServoPivot не назначен", this);
+            Debug.LogError(
+                "LiftServoPivot не назначен",
+                this
+            );
         }
 
         if (elbowPivot == null)
         {
             Debug.LogError(
-                "Cube003ServoPivot не назначен. Без него рука не сможет складываться буквой Z.",
+                "Cube003ServoPivot не назначен. " +
+                "Без него рука не сможет " +
+                "складываться буквой Z.",
                 this
             );
         }
 
-        if (liftPivot != null
-            && elbowPivot != null
-            && !elbowPivot.IsChildOf(liftPivot))
+        if (liftPivot != null &&
+            elbowPivot != null &&
+            !elbowPivot.IsChildOf(liftPivot))
         {
             Debug.LogError(
-                "Cube003ServoPivot должен быть дочерним объектом LiftServoPivot",
+                "Cube003ServoPivot должен быть " +
+                "дочерним объектом LiftServoPivot",
                 this
             );
         }
 
-        if (holdPoint != null
-            && elbowPivot != null
-            && !holdPoint.IsChildOf(elbowPivot))
+        if (holdPoint != null &&
+            elbowPivot != null &&
+            !holdPoint.IsChildOf(elbowPivot))
         {
             Debug.LogError(
-                "HoldPoint должен находиться ниже Cube003ServoPivot в иерархии",
-                this
-            );
-        }
-
-        if (HasFoldActuator && holdPoint != null && reachableLiftHeightMeters < 0.02f)
-        {
-            Debug.LogError(
-                $"Z-поза поднимает HoldPoint только на {reachableLiftHeightMeters:F4} м. " +
-                "Проверьте оси и знаки углов плеча/локтя.",
+                "HoldPoint должен находиться ниже " +
+                "Cube003ServoPivot в иерархии",
                 this
             );
         }
 
         if (!HasGripActuator)
         {
-            Debug.LogError("LeftClawPivot или RightClawPivot не назначен", this);
+            Debug.LogError(
+                "LeftClawPivot или RightClawPivot " +
+                "не назначен",
+                this
+            );
         }
     }
 
-    private static Quaternion GetAxisRotation(Vector3 axis, float angleDegrees)
+    private static Quaternion GetAxisRotation(
+        Vector3 axis,
+        float angleDegrees
+    )
     {
-        return axis.sqrMagnitude < 0.000001f
-            ? Quaternion.identity
-            : Quaternion.AngleAxis(angleDegrees, axis.normalized);
+        if (axis.sqrMagnitude < 0.000001f)
+        {
+            return Quaternion.identity;
+        }
+
+        return Quaternion.AngleAxis(
+            angleDegrees,
+            axis.normalized
+        );
     }
 }
