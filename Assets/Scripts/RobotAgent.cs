@@ -3,10 +3,18 @@ using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
 using UnityEngine.InputSystem;
+using Unity.MLAgents.Policies;
+using System.IO;
 
 [RequireComponent(typeof(Rigidbody))]
 public class RobotAgent : Agent
+
+
 {
+    [Header("=== ROS Integration ===")]
+    public ROSBridge rosBridge;
+    private BehaviorParameters behaviorParameters;
+    
     [Header("=== Компоненты робота ===")]
     public TrackController trackController;
     public GripperController gripperController;
@@ -21,22 +29,29 @@ public class RobotAgent : Agent
     public float victoryDistance = 0.4f;
 
     [Header("=== Настройки Наград и Штрафов ===")]
-    public float rewardGoalReached = 10.0f;       
+    public float rewardGoalReached = 15.0f;
+    public float rewardBallGrabedd = 10.0f;       
     public float rewardCentering = 1.0f;        
-    public float rewardDistanceMultiplier = 1.0f; 
-    public float rewardHoldBallStep = 0.002f;     
+    public float rewardDistanceMultiplier = 0.2f; 
+    public float rewardHoldBallStep = 0.003f;     
     
     [Space(10)]
-    public float penaltyCrash = -2.0f;            
-    public float penaltyDropBall = -2.0f;         
+    public float penaltyCrash = -5.0f;            
+    public float penaltyDropBall = -5.0f;         
     public float penaltyJerkMultiplier = 0.005f;  
     public float penaltyUltrasound = -0.02f;      
     public float penaltyIRObstacle = -0.01f;      
-    public float rewardTimePenalty = -0.002f;       
+    public float rewardTimePenalty = -0.005f;       
     
     [Space(10)]
     public bool penalizeEmptyGrab = true;
-    public float penaltyEmptyGrab = -0.01f;       
+    public float penaltyEmptyGrab = -0.005f;
+
+    [Header("=== Логгирование Наград (Debug) ===")]
+    public bool enableRewardLogging = false;
+    public string logFileName = "RewardLog.csv";
+    private StreamWriter rewardLogWriter;
+    private float lastStepCumulativeReward = 0f; 
 
     private Rigidbody rb;
     private GameObject targetBall;
@@ -66,10 +81,21 @@ public class RobotAgent : Agent
         rb = GetComponent<Rigidbody>();
         startPosition = transform.localPosition;
         startRotation = transform.localRotation;
+
+        behaviorParameters = GetComponent<BehaviorParameters>();
+
+        // НОВОЕ: Настройка логгера
+        if (enableRewardLogging)
+        {
+            string path = Path.Combine(Application.dataPath, logFileName);
+            rewardLogWriter = new StreamWriter(path, false); // false = перезаписывать файл при каждом запуске
+            rewardLogWriter.WriteLine("Episode,Step,StepReward,TotalReward,ActionGas,ActionSteer");
+        }
     }
 
     public override void OnEpisodeBegin()
     {
+        lastStepCumulativeReward = 0f;
         // НОВОЕ: Сброс статистики
         isEpisodeResolved = false;
         hasGrabbedBall = false; 
@@ -159,17 +185,53 @@ public class RobotAgent : Agent
         float headSignal  = actions.ContinuousActions[2]; 
         int clawAction    = actions.DiscreteActions[0];
 
+        // 1. Управление виртуальным роботом в симуляции
         if (trackController != null)
             trackController.SetInputs(gasSignal, steerSignal, headSignal);
-        
+
+        // 2. Логика отправки команд в ROS через BehaviorParameters
+        if (rosBridge != null && behaviorParameters != null)
+        {
+            // Проверяем: если стоит HeuristicOnly (WASD) или InferenceOnly (запущенная обученная сетка)
+            bool isRealWorldDrive = behaviorParameters.BehaviorType == BehaviorType.HeuristicOnly || 
+                                    behaviorParameters.BehaviorType == BehaviorType.InferenceOnly;
+
+            if (isRealWorldDrive)
+            {
+                // Отправляем газ и руль в ROS
+                rosBridge.PublishCmdVel(gasSignal, steerSignal);
+
+                // Отправляем поворот платформы камеры (переводим [-1, 1] в градусов [-90, 90])
+                rosBridge.PublishCameraCmd(headSignal * 90f);
+
+                // Отправляем команду клешни (1 - закрыть, 2 - открыть)
+                if (clawAction == 1 || clawAction == 2)
+                {
+                    rosBridge.PublishGripperCmd(clawAction);
+                }
+            }
+        }
+
+        // 3. Вычисление физики, наград и терминальных условий
         ControlClaw(clawAction);
         CalculateRewards(gasSignal, steerSignal);
         CheckTerminalConditions();
 
-        // НОВОЕ: Проверка на таймаут (если шаги закончились, а робот ничего не сделал)
+        // 4. Проверка на таймаут эпизода
         if (!isEpisodeResolved && MaxStep > 0 && StepCount >= MaxStep - 1)
         {
-            SendStatsToTensorBoard(false); // Отправляем статистику провала
+            Debug.Log($"[ЭПИЗОД ЗАВЕРШЕН] Прожито шагов: {StepCount}");
+            SendStatsToTensorBoard(false);
+        }
+
+        if (enableRewardLogging)
+        {
+            float currentTotalReward = GetCumulativeReward();
+            float rewardForThisStep = currentTotalReward - lastStepCumulativeReward;
+            lastStepCumulativeReward = currentTotalReward;
+
+            // Пишем в файл: Эпизод, Шаг, Награда за этот шаг, Суммарная награда, Газ, Руль
+            rewardLogWriter.WriteLine($"{CompletedEpisodes},{StepCount},{rewardForThisStep:F5},{currentTotalReward:F4},{gasSignal:F2},{steerSignal:F2}");
         }
     }
 
@@ -223,6 +285,12 @@ public class RobotAgent : Agent
         }
 
         AddReward(rewardTimePenalty);
+
+        if (virtualSensors != null && virtualSensors.isBallInGripper && !gripperController.IsHoldingBall())
+        {
+            AddReward(0.005f); // Маленький бонус за то, что завел мяч прямо в клешню
+        }
+
     }
     
     private void UpdateTargetMetrics(bool forceReset)
@@ -319,9 +387,10 @@ public class RobotAgent : Agent
                 // Выдаем большую награду ТОЛЬКО если это первый захват в текущем эпизоде
                 if (!hasGrabbedBall)
                 {
-                    AddReward(3.0f); // Единоразовая награда за успешный хват
+                    AddReward(rewardBallGrabedd); // Единоразовая награда за успешный хват
                     hasGrabbedBall = true; // Фиксируем, чтобы больше не давать награду
                     Debug.Log("<color=cyan>[ФАЗА 1 ЗАВЕРШЕНА]</color> Мяч успешно захвачен!");
+                    EndEpisode();
                 }
             }
             else if (!gripperController.IsHoldingBall())
@@ -393,6 +462,14 @@ public class RobotAgent : Agent
             AddReward(penaltyCrash); 
             SendStatsToTensorBoard(false); // НОВОЕ: Отправка статистики провала при аварии
             EndEpisode();     
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (rewardLogWriter != null)
+        {
+            rewardLogWriter.Close();
         }
     }
 }

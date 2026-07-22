@@ -577,6 +577,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: TrainingArena
       objectReference: {fileID: 0}
+    - target: {fileID: 305318165097681383, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: MaxStep
+      value: 1000
+      objectReference: {fileID: 0}
     - target: {fileID: 307364432426004064, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -616,6 +620,14 @@ PrefabInstance:
     - target: {fileID: 307364432426004064, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3067445245881581007, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 5.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3067445245881581007, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.25
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

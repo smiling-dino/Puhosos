@@ -118,6 +118,12 @@ public class TrackController : MonoBehaviour
     {
         currentLeftPwm = 0f;
         currentRightPwm = 0f;
+
+        currentHeadAngle = 0f;
+        if (headPlatform != null)
+        {
+            headPlatform.localRotation = Quaternion.identity;
+        }
         
         if (rb != null)
         {

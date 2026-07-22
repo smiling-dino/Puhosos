@@ -114,7 +114,7 @@ MonoBehaviour:
   obstacleZone: {fileID: 1330072274571829630}
   targetZone: {fileID: 659878032612721238}
   homeZone: {fileID: 3447537081727150239}
-  obstacleCount: 5
+  obstacleCount: 0
   maxSpawnAttempts: 30
 --- !u!1 &218371267665834342
 GameObject:
@@ -1477,6 +1477,7 @@ GameObject:
   - component: {fileID: 6062428564256148805}
   - component: {fileID: 4887241191261690019}
   - component: {fileID: 305318165097681383}
+  - component: {fileID: 5523045135572830017}
   m_Layer: 0
   m_Name: robot
   m_TagString: Untagged
@@ -1659,7 +1660,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: b67d716f3891e22eaa07f2737dc1a79c, type: 3}
+  m_Model: {fileID: 0}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: GFSX_Brain
@@ -1698,7 +1699,8 @@ MonoBehaviour:
   agentParameters:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
-  MaxStep: 1000
+  MaxStep: 2000
+  rosBridge: {fileID: 5523045135572830017}
   trackController: {fileID: 5936100680492390496}
   gripperController: {fileID: 810110853991004568}
   virtualSensors: {fileID: 4584512034479536217}
@@ -1708,17 +1710,39 @@ MonoBehaviour:
   cubeTag: TargetCube
   victoryDistance: 0.3
   rewardGoalReached: 10
+  rewardBallGrabedd: 10
   rewardCentering: 0.002
-  rewardDistanceMultiplier: 2
+  rewardDistanceMultiplier: 0.5
   rewardHoldBallStep: 0.001
   penaltyCrash: -5
   penaltyDropBall: -0.5
   penaltyJerkMultiplier: 0.001
   penaltyUltrasound: -0.05
   penaltyIRObstacle: -0.02
-  rewardTimePenalty: 0.001
-  penalizeEmptyGrab: 0
-  penaltyEmptyGrab: -0.01
+  rewardTimePenalty: -0.002
+  penalizeEmptyGrab: 1
+  penaltyEmptyGrab: -0.005
+  enableRewardLogging: 0
+  logFileName: RewardLog.csv
+--- !u!114 &5523045135572830017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3435479002869183343}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8486bc0c3bf0ecc980a249e5cc35d03, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ROSBridge
+  cmdVelTopic: /cmd_vel
+  cmdGripperTopic: /cmd_gripper
+  cmdCameraPanTopic: /cmd_camera_pan
+  maxLinearSpeed: 0.5
+  maxAngularSpeed: 1.5
+  emaAlpha: 0.8
+  watchdogTimeout: 0.5
 --- !u!1 &3649701215003351900
 GameObject:
   m_ObjectHideFlags: 0
