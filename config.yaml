@@ -7,44 +7,170 @@ env_settings:
 environment_parameters:
   training_stage:
     curriculum:
-      - name: capture_only_clean
+      - name: look_at_visible_ball
         completion_criteria:
           measure: reward
           behavior: GFSX_Brain
           signal_smoothing: true
           min_lesson_length: 100
-          threshold: 0.55
+          threshold: 0.80
           require_reset: true
         value: 0.0
-      - name: capture_and_lift_clean
+      - name: approach_far_visible
         completion_criteria:
           measure: reward
           behavior: GFSX_Brain
           signal_smoothing: true
-          min_lesson_length: 100
-          threshold: 0.55
+          min_lesson_length: 120
+          threshold: 0.75
           require_reset: true
         value: 1.0
+      - name: approach_near_visible
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 120
+          threshold: 0.75
+          require_reset: true
+        value: 2.0
+      - name: reach_capture_zone
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 140
+          threshold: 0.75
+          require_reset: true
+        value: 3.0
+      - name: close_gripper_assisted
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 140
+          threshold: 0.80
+          require_reset: true
+        value: 4.0
+      - name: capture_near_visible
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 180
+          threshold: 0.70
+          require_reset: true
+        value: 5.0
+      - name: fold_half_pregrasped
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 120
+          threshold: 0.85
+          require_reset: true
+        value: 6.0
+      - name: fold_full_pregrasped
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 140
+          threshold: 0.85
+          require_reset: true
+        value: 7.0
+      - name: lift_pregrasped
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 180
+          threshold: 0.80
+          require_reset: true
+        value: 8.0
+      - name: capture_and_lift_near
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 220
+          threshold: 0.70
+          require_reset: true
+        value: 9.0
+      - name: carry_to_target_assisted
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 220
+          threshold: 0.70
+          require_reset: true
+        value: 10.0
+      - name: stop_at_target_assisted
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 240
+          threshold: 0.65
+          require_reset: true
+        value: 11.0
+      - name: full_route_short_clean
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 280
+          threshold: 0.60
+          require_reset: true
+        value: 12.0
       - name: full_route_clean
         completion_criteria:
           measure: reward
           behavior: GFSX_Brain
           signal_smoothing: true
-          min_lesson_length: 150
-          threshold: 0.60
+          min_lesson_length: 320
+          threshold: 0.50
           require_reset: true
-        value: 2.0
-      - name: full_route_p1
+        value: 13.0
+      - name: search_and_full_route_clean
         completion_criteria:
           measure: reward
           behavior: GFSX_Brain
           signal_smoothing: true
-          min_lesson_length: 200
-          threshold: 0.50
+          min_lesson_length: 360
+          threshold: 0.40
           require_reset: true
-        value: 3.0
-      - name: full_route_p1_p2
-        value: 4.0
+        value: 14.0
+      - name: full_route_p1_dynamics
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 400
+          threshold: 0.30
+          require_reset: true
+        value: 15.0
+      - name: full_route_p1_sensors
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 450
+          threshold: 0.25
+          require_reset: true
+        value: 16.0
+      - name: full_route_p1_p2_mild
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 500
+          threshold: 0.15
+          require_reset: true
+        value: 17.0
+      - name: full_route_p1_p2_full
+        value: 18.0
 
 behaviors:
   GFSX_Brain:
@@ -52,10 +178,10 @@ behaviors:
 
     hyperparameters:
       batch_size: 2048
-      buffer_size: 32768
+      buffer_size: 65536
       learning_rate: 0.0003
       learning_rate_schedule: linear
-      beta: 0.01
+      beta: 0.008
       beta_schedule: linear
       epsilon: 0.2
       epsilon_schedule: linear
@@ -63,17 +189,17 @@ behaviors:
       num_epoch: 3
 
     network_settings:
-      normalize: false
+      normalize: true
       hidden_units: 256
-      num_layers: 2
+      num_layers: 3
 
     reward_signals:
       extrinsic:
         gamma: 0.995
         strength: 1.0
 
-    max_steps: 3000000
+    max_steps: 50000000
     time_horizon: 512
     summary_freq: 10000
-    checkpoint_interval: 250000
-    keep_checkpoints: 10
+    checkpoint_interval: 500000
+    keep_checkpoints: 12
