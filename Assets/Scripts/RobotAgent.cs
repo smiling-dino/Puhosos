@@ -315,7 +315,14 @@ public class RobotAgent : Agent
             if (virtualSensors.isBallInGripper && targetBall != null)
             {
                 gripperController.GrabBall(targetBall);
-                hasGrabbedBall = true; // НОВОЕ: Фиксируем успешный захват мяча для статистики
+                
+                // Выдаем большую награду ТОЛЬКО если это первый захват в текущем эпизоде
+                if (!hasGrabbedBall)
+                {
+                    AddReward(3.0f); // Единоразовая награда за успешный хват
+                    hasGrabbedBall = true; // Фиксируем, чтобы больше не давать награду
+                    Debug.Log("<color=cyan>[ФАЗА 1 ЗАВЕРШЕНА]</color> Мяч успешно захвачен!");
+                }
             }
             else if (!gripperController.IsHoldingBall())
             {
