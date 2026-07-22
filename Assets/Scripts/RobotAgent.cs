@@ -7,6 +7,13 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody))]
 public class RobotAgent : Agent
 {
+    [Header("=== Режим работы (Симуляция / Реальный робот) ===")]
+    [Tooltip("Включите для управления физическим роботом через ROS.")]
+    [SerializeField] private bool useRealRobot = false;
+    [SerializeField] private RealSensorsReceiver realSensors; //[cite: 2, 4]
+    [SerializeField] private RealVision realVision;             //[cite: 2, 3]
+    [SerializeField] private ROSBridge rosBridge;               //[cite: 2, 5]
+
     [Header("=== Компоненты робота ===")]
     public TrackController trackController;
     public GripperController gripperController;
@@ -32,7 +39,7 @@ public class RobotAgent : Agent
     public float penaltyJerkMultiplier = 0.005f;  // Сила штрафа за резкое управление
     public float penaltyUltrasound = -0.02f;      // Штраф за опасное сближение (УЗ-датчик)
     public float penaltyIRObstacle = -0.01f;      // Штраф за опасное сближение (ИК-датчики)
-    public float rewardTimePenalty = -0.002f;       //Штраф за время по модулю
+    public float rewardTimePenalty = -0.002f;       // Штраф за время по модулю
     public float rewardBodyAlignment = 0.002f;    // Бонус за выравнивание корпуса на мяч
     
     [Space(10)]
@@ -67,7 +74,14 @@ public class RobotAgent : Agent
     {
         isEpisodeResolved = false;
 
-        // 1. Сброс состояния механизмов
+        // Если это реальный робот, мы не телепортируем объект, чтобы не ломать синхронизацию
+        if (useRealRobot)
+        {
+            previousDistanceToBall = GetCurrentDistanceToBall();
+            return;
+        }
+
+        // 1. Сброс состояния механизмов через встроенный в TrackController метод
         if (gripperController != null && gripperController.IsHoldingBall())
         {
             gripperController.ReleaseBall();
@@ -75,7 +89,7 @@ public class RobotAgent : Agent
         
         if (trackController != null)
         {
-            trackController.ResetMotors();
+            trackController.ResetMotors(); //[cite: 7]
         }
 
         // 2. Сброс переменных и позиции
@@ -84,21 +98,20 @@ public class RobotAgent : Agent
         timeSinceLastDetection = 0f;
         lastKnownBallDirection = 0f;
         
-        // Отключаем интерполяцию для телепорта без визуальных глитчей
         rb.interpolation = RigidbodyInterpolation.None; 
 
         transform.localPosition = startPosition; 
-        transform.localRotation = startRotation; // <-- СБРАСЫВАЕМ ПОВОРОТ ТУТ!
+        transform.localRotation = startRotation; 
 
         rb.position = transform.position; 
-        rb.rotation = transform.rotation;        // <-- СБРАСЫВАЕМ ПОВОРОТ ДЛЯ RIGIDBODY!
+        rb.rotation = transform.rotation;        
 
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-        // 3. Поиск мяча на арене (С защитой от пустых ссылок)
-        targetBall = null; // ОБЯЗАТЕЛЬНО СБРАСЫВАЕМ ССЫЛКУ ПЕРЕД ПОИСКОМ!
+        // 3. Поиск мяча на арене
+        targetBall = null; 
         Transform arena = transform.parent; 
         if (arena != null) 
         {
@@ -117,10 +130,6 @@ public class RobotAgent : Agent
                 }
             }
         }
-        else
-        {
-            Debug.LogError("Ошибка: У агента нет родительского объекта (Арены)!");
-        }
 
         // 4. Спавн мяча в новой позиции
         if (targetBall != null)
@@ -136,21 +145,21 @@ public class RobotAgent : Agent
                 ballRb.angularVelocity = Vector3.zero;
             }
 
-            // Считаем дистанцию от центра клешни, а не от центра робота
-            if (gripperController != null && gripperController.holdPoint != null)
-            {
-                previousDistanceToBall = Vector3.Distance(gripperController.holdPoint.position, targetBall.transform.position);
-            }
-            
-            previousCameraOffset = 1f; // Сброс камеры
+            previousDistanceToBall = GetCurrentDistanceToBall();
+            previousCameraOffset = 1f; 
         }
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        if (yoloCamera != null && yoloCamera.isBallVisible)
+        // Источники данных зависят от режима (Симуляция vs Реальный робот)[cite: 2]
+        bool isVisible = useRealRobot ? realVision.seesBall : (yoloCamera != null && yoloCamera.isBallVisible);
+        float normAngle = useRealRobot ? realVision.normalizedAngle : (yoloCamera != null ? yoloCamera.horizontalOffset : 0f);
+        float normDist = useRealRobot ? realVision.normalizedDistance : (yoloCamera != null ? yoloCamera.normalizedDistance : 1f);
+
+        if (isVisible)
         {
-            lastKnownBallDirection = yoloCamera.horizontalOffset;
+            lastKnownBallDirection = normAngle;
             timeSinceLastDetection = 0f;
         }
         else
@@ -158,33 +167,41 @@ public class RobotAgent : Agent
             timeSinceLastDetection += Time.fixedDeltaTime;
         }
 
-        sensor.AddObservation(virtualSensors != null ? virtualSensors.ultrasoundValue : 1f);
-        sensor.AddObservation(virtualSensors != null ? virtualSensors.leftIRObstacle : 0);
-        sensor.AddObservation(virtualSensors != null ? virtualSensors.rightIRObstacle : 0);
-        sensor.AddObservation(virtualSensors != null && virtualSensors.isBallInGripper ? 1f : 0f);
+        // Сбор показаний датчиков
+        float ultrasound = useRealRobot ? realSensors.ultrasoundValue : (virtualSensors != null ? virtualSensors.ultrasoundValue : 1f);
+        float leftIR = useRealRobot ? realSensors.leftIRObstacle : (virtualSensors != null ? virtualSensors.leftIRObstacle : 0);
+        float rightIR = useRealRobot ? realSensors.rightIRObstacle : (virtualSensors != null ? virtualSensors.rightIRObstacle : 0);
+        bool ballInGripper = useRealRobot ? realSensors.isBallInGripper : (virtualSensors != null ? virtualSensors.isBallInGripper : false);
 
-        sensor.AddObservation(yoloCamera != null ? yoloCamera.horizontalOffset : 0f);
-        sensor.AddObservation(yoloCamera != null ? yoloCamera.normalizedDistance : 1f);
+        sensor.AddObservation(ultrasound);
+        sensor.AddObservation(leftIR);
+        sensor.AddObservation(rightIR);
+        sensor.AddObservation(ballInGripper ? 1f : 0f);
+
+        sensor.AddObservation(normAngle);
+        sensor.AddObservation(normDist);
         
         sensor.AddObservation(lastKnownBallDirection);
-        sensor.AddObservation(yoloCamera != null && yoloCamera.isBallVisible ? 1f : 0f);
+        sensor.AddObservation(isVisible ? 1f : 0f);
 
+        // Нормализация угла башни (головы) на основе лимитов из TrackController
         float headNorm = 0f;
         if (trackController != null && trackController.headPlatform != null)
         {
             float rawAngle = trackController.headPlatform.localEulerAngles.y;
             if (rawAngle > 180f) rawAngle -= 360f;
-            headNorm = rawAngle / trackController.maxHeadAngle;
+            headNorm = rawAngle / trackController.maxHeadAngle; //[cite: 7]
         }
         sensor.AddObservation(headNorm);
 
-        sensor.AddObservation(gripperController != null && gripperController.IsHoldingBall() ? 1f : 0f);
+        bool isHolding = useRealRobot ? realSensors.isBallInGripper : (gripperController != null && gripperController.IsHoldingBall());
+        sensor.AddObservation(isHolding ? 1f : 0f);
 
         Vector3 offset = transform.localPosition - startPosition;
         sensor.AddObservation(offset.x);
         sensor.AddObservation(offset.z);
         sensor.AddObservation(transform.localEulerAngles.y / 360f);
-        sensor.AddObservation(rb.linearVelocity.magnitude);
+        sensor.AddObservation(useRealRobot ? 0f : rb.linearVelocity.magnitude);
         sensor.AddObservation(Mathf.Clamp(timeSinceLastDetection, 0f, 10f) / 10f);
     }
 
@@ -195,49 +212,78 @@ public class RobotAgent : Agent
         float headSignal  = actions.ContinuousActions[2]; 
         int clawAction    = actions.DiscreteActions[0];
 
-        if (trackController != null)
+        if (useRealRobot)
         {
-            trackController.SetInputs(gasSignal, steerSignal, headSignal);
+            // Отправляем команды на физического робота через ROS Bridge[cite: 2, 5]
+            if (rosBridge != null)
+            {
+                rosBridge.PublishCmdVel(gasSignal, steerSignal);     //[cite: 5]
+                rosBridge.PublishGripperCmd(clawAction);              //[cite: 5]
+            }
+
+            // Дублируем движение в симуляторе через TrackController для визуализации
+            if (trackController != null)
+            {
+                trackController.SetInputs(gasSignal, steerSignal, headSignal); //[cite: 7]
+                
+                // Передаем текущий угол поворота головы в ROS
+                if (rosBridge != null && trackController.headPlatform != null)
+                {
+                    float currentYaw = trackController.headPlatform.localEulerAngles.y;
+                    if (currentYaw > 180f) currentYaw -= 360f;
+                    rosBridge.PublishCameraCmd(currentYaw); //[cite: 5]
+                }
+            }
         }
-        ControlClaw(clawAction);
-
-        CalculateRewards(gasSignal, steerSignal);
-        CheckTerminalConditions();
-
-        // --- ПРОВЕРКА НА ТАЙМ-АУТ ---
-        // Если мы достигли предпоследнего шага (StepCount >= MaxStep - 1), 
-        // и эпизод еще не завершен победой или аварией - засчитываем провал.
-        if (!isEpisodeResolved && MaxStep > 0 && StepCount >= MaxStep - 1)
+        else
         {
-            // Отправляем 0 (Провал - закончилось время)
-            Academy.Instance.StatsRecorder.Add("Custom/Success Rate", 0f, StatAggregationMethod.Average);
-            isEpisodeResolved = true;
+            // Обычный режим симуляции
+            if (trackController != null)
+            {
+                trackController.SetInputs(gasSignal, steerSignal, headSignal); //[cite: 7]
+            }
+            ControlClaw(clawAction);
+
+            CalculateRewards(gasSignal, steerSignal);
+            CheckTerminalConditions();
+
+            // Проверка на тайм-аут
+            if (!isEpisodeResolved && MaxStep > 0 && StepCount >= MaxStep - 1)
+            {
+                Academy.Instance.StatsRecorder.Add("Custom/Success Rate", 0f, StatAggregationMethod.Average);
+                isEpisodeResolved = true;
+            }
         }
+    }
+
+    private float GetCurrentDistanceToBall()
+    {
+        if (useRealRobot)
+        {
+            return realVision.normalizedDistance; //[cite: 2, 3]
+        }
+
+        if (targetBall != null && gripperController != null && gripperController.holdPoint != null)
+        {
+            return Vector3.Distance(gripperController.holdPoint.position, targetBall.transform.position);
+        }
+        return 10f;
     }
 
     private void CalculateRewards(float gasSignal, float steerSignal)
     {
-        // 1. Дельта-награда за сближение КЛЕШНИ с мячом
-        if (targetBall != null && gripperController != null && gripperController.holdPoint != null && !gripperController.IsHoldingBall())
-        {
-            float currentDist = Vector3.Distance(gripperController.holdPoint.position, targetBall.transform.position);
-            float delta = previousDistanceToBall - currentDist;
-            
-            // Убрали if (delta > 0). Теперь приближение дает плюс, а отдаление - минус. Фармить не выйдет.
-            AddReward(delta * rewardDistanceMultiplier);
-            
-            previousDistanceToBall = currentDist;
-        }
+        // 1. Дельта-награда за сближение клешни с мячом
+        float currentDist = GetCurrentDistanceToBall();
+        float delta = previousDistanceToBall - currentDist;
+        AddReward(delta * rewardDistanceMultiplier);
+        previousDistanceToBall = currentDist;
 
         // 2. Дельта-награда за центрирование камеры (YOLO)
-        if (targetBall != null && yoloCamera != null && yoloCamera.isBallVisible)
+        if (yoloCamera != null && yoloCamera.isBallVisible)
         {
             float currentOffset = Mathf.Abs(yoloCamera.horizontalOffset);
             float deltaOffset = previousCameraOffset - currentOffset;
-            
-            // Аналогично: улучшение центра дает плюс, ухудшение - минус.
             AddReward(deltaOffset * rewardCentering);
-            
             previousCameraOffset = currentOffset;
         }
         else
@@ -260,8 +306,7 @@ public class RobotAgent : Agent
             if (virtualSensors.leftIRObstacle == 1 || virtualSensors.rightIRObstacle == 1) AddReward(penaltyIRObstacle);
         }
 
-        // 5. Штраф за прокрастинацию
-        // Переменная rewardTimePenalty уже отрицательная (-0.002f), поэтому просто плюсуем её.
+        // 5. Штраф за время
         AddReward(rewardTimePenalty);
     }
 
@@ -273,7 +318,6 @@ public class RobotAgent : Agent
             
             if (!isEpisodeResolved)
             {
-                // Отправляем 1 (Успех)
                 Academy.Instance.StatsRecorder.Add("Custom/Success Rate", 1f, StatAggregationMethod.Average);
                 isEpisodeResolved = true;
             }
@@ -284,7 +328,7 @@ public class RobotAgent : Agent
 
     private void ControlClaw(int action)
     {
-        if (gripperController == null || virtualSensors == null) return;
+        if (virtualSensors == null) return;
 
         if (action == 1) // Закрыть
         {
@@ -292,18 +336,14 @@ public class RobotAgent : Agent
             {
                 gripperController.GrabBall(targetBall);
             }
-            else if (!gripperController.IsHoldingBall())
+            else if (gripperController != null && !gripperController.IsHoldingBall())
             {
-                // Применяем штраф только если галочка включена
-                if (penalizeEmptyGrab)
-                {
-                    AddReward(penaltyEmptyGrab);
-                }
+                if (penalizeEmptyGrab) AddReward(penaltyEmptyGrab);
             }
         }
         else if (action == 2) // Открыть
         {
-            if (gripperController.IsHoldingBall())
+            if (gripperController != null && gripperController.IsHoldingBall())
             {
                 gripperController.ReleaseBall();
                 AddReward(penaltyDropBall); 
@@ -325,8 +365,8 @@ public class RobotAgent : Agent
             if (kb.wKey.isPressed || kb.upArrowKey.isPressed) gas = 1f;
             else if (kb.sKey.isPressed || kb.downArrowKey.isPressed) gas = -1f;
 
-            if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) steer = 1f;
-            else if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) steer = -1f;
+            if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) steer = -1f;
+            else if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) steer = 1f;
 
             if (kb.eKey.isPressed) headInput = 1f;
             else if (kb.qKey.isPressed) headInput = -1f;
@@ -343,13 +383,12 @@ public class RobotAgent : Agent
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Obstacle"))
+        if (!useRealRobot && collision.gameObject.CompareTag("Obstacle"))
         {
             AddReward(penaltyCrash); 
             
             if (!isEpisodeResolved)
             {
-                // Отправляем 0 (Провал - авария)
                 Academy.Instance.StatsRecorder.Add("Custom/Success Rate", 0f, StatAggregationMethod.Average);
                 isEpisodeResolved = true;
             }
