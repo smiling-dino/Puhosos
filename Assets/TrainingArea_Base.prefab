@@ -1977,6 +1977,7 @@ GameObject:
   - component: {fileID: 3145633081714692616}
   - component: {fileID: 8241631975803193342}
   - component: {fileID: 4050004874437940965}
+  - component: {fileID: 8361043704425432686}
   m_Layer: 0
   m_Name: Xiao-r GFS-X_1
   m_TagString: Untagged
@@ -2296,6 +2297,37 @@ MonoBehaviour:
   DecisionPeriod: 5
   DecisionStep: 0
   TakeActionsBetweenDecisions: 1
+--- !u!114 &8361043704425432686
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6829131032473506175}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a006f86cc8b74740a70c233254c458fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ROSBridge
+  bridgeEnabled: 0
+  disableWhileTrainerConnected: 1
+  enforceSinglePublisher: 1
+  robotBrain: {fileID: 8241631975803193342}
+  trackController: {fileID: 6664661397364652223}
+  gripperController: {fileID: 53475963758593267}
+  cameraServo: {fileID: 7105162563793981822}
+  cmdVelTopic: /gfsx/cmd_vel
+  cameraCommandTopic: /gfsx/camera_cmd
+  gripperCommandTopic: /gfsx/gripper_cmd
+  liftCommandTopic: /gfsx/lift_cmd
+  maxLinearSpeedMetersPerSecond: 0.25
+  maxAngularSpeedRadiansPerSecond: 1.5
+  cameraTurnSpeedDegreesPerSecond: 50
+  emaAlpha: 0.8
+  commandDeadzone: 0.01
+  minimumPublishIntervalSeconds: 0.05
+  policyWatchdogTimeoutSeconds: 0.5
+  publishInitialGripperState: 1
 --- !u!1 &7434681894727897379
 GameObject:
   m_ObjectHideFlags: 0

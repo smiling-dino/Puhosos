@@ -297,8 +297,16 @@ PrefabInstance:
       value: TrainingArea_Base
       objectReference: {fileID: 0}
     - target: {fileID: 3145633081714692616, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: m_Model
+      value: 
+      objectReference: {fileID: 5022602860645237092, guid: ef108fb5ee8c3f448bccab3d5b4dc6d5, type: 3}
+    - target: {fileID: 3145633081714692616, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: m_BehaviorType
-      value: 0
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3145633081714692616, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: m_DeterministicInference
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8782922737251685030, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: m_LocalPosition.x
