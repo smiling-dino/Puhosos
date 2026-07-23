@@ -629,6 +629,18 @@ PrefabInstance:
       propertyPath: m_LocalPosition.x
       value: 0.25
       objectReference: {fileID: 0}
+    - target: {fileID: 5936100680492390496, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: turnSpeed
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 6062428564256148805, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_Model
+      value: 
+      objectReference: {fileID: 5022602860645237092, guid: 1f820fb0658be9ced919d1ddbb933822, type: 3}
+    - target: {fileID: 6062428564256148805, guid: 807be94412c020835a72c6a6fd82dd53, type: 3}
+      propertyPath: m_BehaviorType
+      value: 2
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
