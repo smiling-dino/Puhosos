@@ -352,14 +352,38 @@ PrefabInstance:
     - target: {fileID: 3145633081714692616, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: m_Model
       value: 
-      objectReference: {fileID: 5022602860645237092, guid: ef108fb5ee8c3f448bccab3d5b4dc6d5, type: 3}
+      objectReference: {fileID: 0}
     - target: {fileID: 3145633081714692616, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: m_BehaviorType
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3145633081714692616, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: m_DeterministicInference
-      value: 1
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8241631975803193342, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: enableRosBridge
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8361043704425432686, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: cmdVelTopic
+      value: cmd_vel
+      objectReference: {fileID: 0}
+    - target: {fileID: 8361043704425432686, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: bridgeEnabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8361043704425432686, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: liftCommandTopic
+      value: lift_cmd
+      objectReference: {fileID: 0}
+    - target: {fileID: 8361043704425432686, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: cameraCommandTopic
+      value: camera_cmd
+      objectReference: {fileID: 0}
+    - target: {fileID: 8361043704425432686, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: gripperCommandTopic
+      value: gripper_cmd
       objectReference: {fileID: 0}
     - target: {fileID: 8782922737251685030, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: m_LocalPosition.x
@@ -405,6 +429,12 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6829131032473506175, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 845908117}
+    - targetCorrespondingSourceObject: {fileID: 6829131032473506175, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 845908116}
     - targetCorrespondingSourceObject: {fileID: 1914238687447271830, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       insertIndex: -1
       addedObject: {fileID: 739905040}
@@ -412,6 +442,55 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 739905039}
   m_SourcePrefab: {fileID: 100100000, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+--- !u!1 &845908115 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6829131032473506175, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+  m_PrefabInstance: {fileID: 845908114}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &845908116
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 845908115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 171b119a8d329b64dbaae39dc56b221a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RealVision
+  udpPort: 5005
+  useYOLO: 1
+  packetTimeoutSeconds: 0.5
+  normalizedAngle: 0
+  normalizedDistance: 0
+  seesBall: 0
+--- !u!114 &845908117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 845908115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bc0cffea0632a044a28e0f92ffcb275, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RealSensorsReceiver
+  ultrasoundTopic: /sensor/ultrasound
+  leftIrTopic: /sensor/ir_left
+  rightIrTopic: /sensor/ir_right
+  gripperIrTopic: /sensor/ir_gripper
+  ballVisibleTopic: /yolo/ball_visible
+  ballAngleTopic: /yolo/ball_angle
+  ballDistanceTopic: /yolo/ball_distance
+  ultrasoundValue: 1
+  leftIRObstacle: 0
+  rightIRObstacle: 0
+  isBallInGripper: 0
+  isBallVisible: 0
+  ballNormalizedAngle: 0
+  ballNormalizedDistance: 1
 --- !u!850595691 &1354181355
 LightingSettings:
   m_ObjectHideFlags: 0

@@ -1,0 +1,65 @@
+env_settings:
+  num_areas: 20
+
+environment_parameters:
+  initial_target_visible_probability:
+    curriculum:
+      - name: hunt_warmup
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 100
+          threshold: 1.00
+          require_reset: true
+        value: 0.35
+      - name: hunt_mixed
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 100
+          threshold: 0.80
+          require_reset: true
+        value: 0.15
+      - name: hunt_hard
+        completion_criteria:
+          measure: reward
+          behavior: GFSX_Brain
+          signal_smoothing: true
+          min_lesson_length: 100
+          threshold: 0.65
+          require_reset: true
+        value: 0.05
+      - name: hunt_everywhere
+        value: 0.0
+
+behaviors:
+  GFSX_Brain:
+    trainer_type: ppo
+    hyperparameters:
+      batch_size: 1024
+      buffer_size: 10240
+      learning_rate: 0.00012
+      beta: 0.003
+      epsilon: 0.15
+      lambd: 0.95
+      num_epoch: 3
+      learning_rate_schedule: linear
+    network_settings:
+      normalize: true
+      hidden_units: 256
+      num_layers: 2
+      memory:
+        sequence_length: 64
+        memory_size: 256
+    reward_signals:
+      extrinsic:
+        gamma: 0.995
+        strength: 1.0
+    init_path: GFSX_Brain-17499473.pt
+    keep_checkpoints: 8
+    checkpoint_interval: 500000
+    max_steps: 8000000
+    time_horizon: 1000
+    summary_freq: 1000

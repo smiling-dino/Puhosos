@@ -2217,10 +2217,14 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
   yoloCamera: {fileID: 5552271384746757138}
+  realVision: {fileID: 0}
+  realSensors: {fileID: 0}
   cameraServo: {fileID: 1736409401524606349}
   hardwareSensors: {fileID: 5529589677245396079}
   gripperController: {fileID: 53475963758593267}
   arenaController: {fileID: 8183862508645542294}
+  useRealVisionWhenAvailable: 1
+  useRealSensorsWhenAvailable: 1
   hasBall: 0
   gripperCaptureRadius: 0.08
   cameraYawLimitDegrees: 90
@@ -2231,15 +2235,49 @@ MonoBehaviour:
   maxBallDistanceForEpisode: 20
   maxBallDropBelowArena: 1
   timePenaltyPerDecision: 0.0005
-  distancePotentialWeight: 0.3
-  bodyAlignmentPotentialWeight: 0.05
-  firstAcquisitionReward: 0.05
-  captureZoneReward: 0.1
-  confirmedGraspReward: 0.25
+  distancePotentialWeight: 0.65
+  bodyAlignmentPotentialWeight: 0.12
+  firstAcquisitionReward: 1
+  reacquisitionReward: 0.05
+  captureZoneReward: 0.55
+  confirmedGraspReward: 1.5
   foldPotentialWeight: 0.05
   liftPotentialWeight: 0.15
   terminalSuccessReward: 1
   failedGraspPenalty: -0.02
+  prematureGraspPenalty: -0.05
+  requireCaptureReadyToCloseGripper: 1
+  gripperCloseCommandPenalty: -0.003
+  rapidGripperClosePenalty: -0.02
+  gripperCloseCooldownSteps: 30
+  liftLowerCommandPenalty: -0.002
+  rapidLiftLowerPenalty: -0.01
+  liftLowerCooldownSteps: 15
+  ballVisibleFocusReward: 0.004
+  ballCenteredFocusReward: 0.01
+  lostBallFocusPenalty: -0.12
+  visibleBallApproachReward: 0.006
+  centeredForwardApproachReward: 0.012
+  visibleSpinPenaltyScale: 0.006
+  centeredSpinPenaltyScale: 0.01
+  closeVisibleBallReward: 0.002
+  searchNoVisionPenalty: -0.0007
+  searchStaleVisionPenaltyScale: 0.0012
+  searchActivityReward: 0
+  searchCameraSweepReward: 0
+  blindForwardPenaltyScale: 0.0015
+  searchBodyBearingPotentialWeight: 0.18
+  searchCameraBearingPotentialWeight: 0.28
+  searchMemoryDistancePotentialWeight: 0.2
+  searchNoProgressPenaltyScale: 0.0012
+  visibleRetentionReward: 0.006
+  visibleStreakReward: 0.006
+  visibleDistanceProgressWeight: 0.8
+  visibleWrongWayPenaltyScale: 0.004
+  visibleTurnTowardBallReward: 0.006
+  visibleCameraTowardBallReward: 0.004
+  searchLimitBodyTurnReward: 0.0004
+  cameraLimitPenaltyScale: 0.004
   ballLostBeforeCapturePenalty: -1
   droppedBallPenalty: -1
   fallOrFlipPenalty: -1
@@ -2310,8 +2348,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ROSBridge
   bridgeEnabled: 0
+  enableFromCommandLine: 1
   disableWhileTrainerConnected: 1
   enforceSinglePublisher: 1
+  configureConnectionFromCommandLine: 1
+  enableArgument: --ros-bridge
+  rosIpArgument: --ros-ip
+  rosPortArgument: --ros-port
   robotBrain: {fileID: 8241631975803193342}
   trackController: {fileID: 6664661397364652223}
   gripperController: {fileID: 53475963758593267}
@@ -2320,12 +2363,15 @@ MonoBehaviour:
   cameraCommandTopic: /gfsx/camera_cmd
   gripperCommandTopic: /gfsx/gripper_cmd
   liftCommandTopic: /gfsx/lift_cmd
-  maxLinearSpeedMetersPerSecond: 0.25
-  maxAngularSpeedRadiansPerSecond: 1.5
-  cameraTurnSpeedDegreesPerSecond: 50
-  emaAlpha: 0.8
-  commandDeadzone: 0.01
-  minimumPublishIntervalSeconds: 0.05
+  maxLinearSpeedMetersPerSecond: 0.08
+  maxAngularSpeedRadiansPerSecond: 0.45
+  cameraTurnSpeedDegreesPerSecond: 25
+  emaAlpha: 0.25
+  commandDeadzone: 0.03
+  minimumPublishIntervalSeconds: 0.1
+  gripperCommandCooldownSeconds: 0.7
+  liftCommandCooldownSeconds: 0.2
+  blockLiftUntilGripperClosed: 1
   policyWatchdogTimeoutSeconds: 0.5
   publishInitialGripperState: 1
 --- !u!1 &7434681894727897379

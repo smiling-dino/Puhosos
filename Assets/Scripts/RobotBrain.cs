@@ -22,10 +22,14 @@ public class RobotBrain : Agent
 
     [Header("Hardware & Controllers")]
     [SerializeField] private SimulatedYoloCamera yoloCamera;
+    [SerializeField] private RealVision realVision;
+    [SerializeField] private RealSensorsReceiver realSensors;
     [SerializeField] private Transform cameraServo;
     [SerializeField] private VirtualSensors hardwareSensors;
     [SerializeField] private GripperController gripperController;
     [SerializeField] private ArenaController arenaController;
+    [SerializeField] private bool useRealVisionWhenAvailable = true;
+    [SerializeField] private bool useRealSensorsWhenAvailable = true;
 
     [Header("Gripper Simulation")]
     [SerializeField] private bool hasBall = false;
@@ -46,15 +50,49 @@ public class RobotBrain : Agent
 
     [Header("Reward Budget")]
     [SerializeField] private float timePenaltyPerDecision = 0.0005f;
-    [SerializeField] private float distancePotentialWeight = 0.30f;
-    [SerializeField] private float bodyAlignmentPotentialWeight = 0.05f;
-    [SerializeField] private float firstAcquisitionReward = 0.05f;
-    [SerializeField] private float captureZoneReward = 0.10f;
-    [SerializeField] private float confirmedGraspReward = 0.25f;
+    [SerializeField] private float distancePotentialWeight = 0.65f;
+    [SerializeField] private float bodyAlignmentPotentialWeight = 0.12f;
+    [SerializeField] private float firstAcquisitionReward = 1.00f;
+    [SerializeField] private float reacquisitionReward = 0.05f;
+    [SerializeField] private float captureZoneReward = 0.55f;
+    [SerializeField] private float confirmedGraspReward = 1.50f;
     [SerializeField] private float foldPotentialWeight = 0.05f;
     [SerializeField] private float liftPotentialWeight = 0.15f;
     [SerializeField] private float terminalSuccessReward = 1.0f;
     [SerializeField] private float failedGraspPenalty = -0.02f;
+    [SerializeField] private float prematureGraspPenalty = -0.05f;
+    [SerializeField] private bool requireCaptureReadyToCloseGripper = true;
+    [SerializeField] private float gripperCloseCommandPenalty = -0.003f;
+    [SerializeField] private float rapidGripperClosePenalty = -0.02f;
+    [SerializeField] private int gripperCloseCooldownSteps = 30;
+    [SerializeField] private float liftLowerCommandPenalty = -0.002f;
+    [SerializeField] private float rapidLiftLowerPenalty = -0.01f;
+    [SerializeField] private int liftLowerCooldownSteps = 15;
+    [SerializeField] private float ballVisibleFocusReward = 0.0040f;
+    [SerializeField] private float ballCenteredFocusReward = 0.0100f;
+    [SerializeField] private float lostBallFocusPenalty = -0.1200f;
+    [SerializeField] private float visibleBallApproachReward = 0.0060f;
+    [SerializeField] private float centeredForwardApproachReward = 0.0120f;
+    [SerializeField] private float visibleSpinPenaltyScale = 0.0060f;
+    [SerializeField] private float centeredSpinPenaltyScale = 0.0100f;
+    [SerializeField] private float closeVisibleBallReward = 0.0020f;
+    [SerializeField] private float searchNoVisionPenalty = -0.0007f;
+    [SerializeField] private float searchStaleVisionPenaltyScale = 0.0012f;
+    [SerializeField] private float searchActivityReward = 0.0000f;
+    [SerializeField] private float searchCameraSweepReward = 0.0000f;
+    [SerializeField] private float blindForwardPenaltyScale = 0.0015f;
+    [SerializeField] private float searchBodyBearingPotentialWeight = 0.18f;
+    [SerializeField] private float searchCameraBearingPotentialWeight = 0.28f;
+    [SerializeField] private float searchMemoryDistancePotentialWeight = 0.20f;
+    [SerializeField] private float searchNoProgressPenaltyScale = 0.0012f;
+    [SerializeField] private float visibleRetentionReward = 0.0060f;
+    [SerializeField] private float visibleStreakReward = 0.0060f;
+    [SerializeField] private float visibleDistanceProgressWeight = 0.80f;
+    [SerializeField] private float visibleWrongWayPenaltyScale = 0.0040f;
+    [SerializeField] private float visibleTurnTowardBallReward = 0.0060f;
+    [SerializeField] private float visibleCameraTowardBallReward = 0.0040f;
+    [SerializeField] private float searchLimitBodyTurnReward = 0.0004f;
+    [SerializeField] private float cameraLimitPenaltyScale = 0.0040f;
     [SerializeField] private float ballLostBeforeCapturePenalty = -1.0f;
     [SerializeField] private float droppedBallPenalty = -1.0f;
     [SerializeField] private float fallOrFlipPenalty = -1.0f;
@@ -123,6 +161,10 @@ public class RobotBrain : Agent
     private float cameraYawDegrees = 0f;
     private float previousDistancePotential = 0f;
     private float previousAlignmentPotential = 0f;
+    private float previousSearchBodyPotential = 0f;
+    private float previousSearchCameraPotential = 0f;
+    private float previousSearchMemoryDistancePotential = 0f;
+    private float bestVisibleDistanceNormalized = 1f;
     private float previousFoldPotential = 0f;
     private float previousLiftPotential = 0f;
     private float liftStartBallY = 0f;
@@ -135,10 +177,14 @@ public class RobotBrain : Agent
     private bool initialBallVisible = false;
     private bool previousRewardBallVisible = false;
     private bool firstAcquisitionAwarded = false;
+    private bool everSawBallThisEpisode = false;
     private bool captureZoneAwarded = false;
     private bool confirmedGraspAwarded = false;
     private bool everCapturedBall = false;
     private int stableLiftDecisionCount = 0;
+    private int visibleDecisionStreak = 0;
+    private int lastGripperCloseStep = int.MinValue;
+    private int lastLiftLowerStep = int.MinValue;
 
     private bool defaultsCaptured = false;
     private float defaultRobotMass;
@@ -177,6 +223,8 @@ public class RobotBrain : Agent
     {
         trackController = GetComponent<TrackController>();
         rb = GetComponent<Rigidbody>();
+        realVision ??= GetComponent<RealVision>();
+        realSensors ??= GetComponent<RealSensorsReceiver>();
         DecisionRequester decisionRequester = GetComponent<DecisionRequester>();
         if (decisionRequester != null)
         {
@@ -240,6 +288,10 @@ public class RobotBrain : Agent
         cameraYawDegrees = 0f;
         previousDistancePotential = 0f;
         previousAlignmentPotential = 0f;
+        previousSearchBodyPotential = 0f;
+        previousSearchCameraPotential = 0f;
+        previousSearchMemoryDistancePotential = 0f;
+        bestVisibleDistanceNormalized = 1f;
         previousFoldPotential = 0f;
         previousLiftPotential = 0f;
         liftStartBallY = 0f;
@@ -252,10 +304,14 @@ public class RobotBrain : Agent
         initialBallVisible = false;
         previousRewardBallVisible = false;
         firstAcquisitionAwarded = false;
+        everSawBallThisEpisode = false;
         captureZoneAwarded = false;
         confirmedGraspAwarded = false;
         everCapturedBall = false;
         stableLiftDecisionCount = 0;
+        visibleDecisionStreak = 0;
+        lastGripperCloseStep = int.MinValue;
+        lastLiftLowerStep = int.MinValue;
 
         if (cameraServo != null)
         {
@@ -280,14 +336,25 @@ public class RobotBrain : Agent
         ApplyEpisodeRandomization(useTrainingRandomization);
         ResetActionLatency(useTrainingRandomization);
 
-        initialBallVisible = yoloCamera != null && yoloCamera.IsBallVisible();
+        ReadBallObservation(
+            out bool initialVisible,
+            out float initialAngle,
+            out float initialDistance
+        );
+        initialBallVisible = initialVisible;
         previousRewardBallVisible = initialBallVisible;
         lastObservedBallVisible = initialBallVisible;
-        lastObservedBallAngle = initialBallVisible ? yoloCamera.GetNormalizedHorizontalAngle() : 0f;
-        lastObservedBallDistance = initialBallVisible ? yoloCamera.GetNormalizedDistance() : 1f;
+        lastObservedBallAngle = initialBallVisible ? initialAngle : 0f;
+        lastObservedBallDistance = initialBallVisible ? initialDistance : 1f;
         taskStage = initialBallVisible ? TaskStage.Approach : TaskStage.Search;
+        everSawBallThisEpisode = initialBallVisible;
+        visibleDecisionStreak = initialBallVisible ? 1 : 0;
+        bestVisibleDistanceNormalized = initialBallVisible ? lastObservedBallDistance : 1f;
         previousDistancePotential = GetDistancePotential();
         previousAlignmentPotential = initialBallVisible ? GetBodyAlignmentPotential() : 0f;
+        previousSearchBodyPotential = GetSearchBodyBearingPotential();
+        previousSearchCameraPotential = GetSearchCameraBearingPotential();
+        previousSearchMemoryDistancePotential = previousDistancePotential;
 
         RecordSpawnDiagnostics(GetDistanceToBall());
     }
@@ -295,8 +362,11 @@ public class RobotBrain : Agent
     public override void CollectObservations(VectorSensor sensor)
     {
         bool useTrainingRandomization = ShouldUseTrainingRandomization();
-        bool isVisible = yoloCamera != null && yoloCamera.IsBallVisible();
-        float normAngle = isVisible ? yoloCamera.GetNormalizedHorizontalAngle() : 0f;
+        ReadBallObservation(
+            out bool isVisible,
+            out float normAngle,
+            out float normalizedDistance
+        );
 
         if (burstDropoutRemaining > 0)
         {
@@ -311,7 +381,7 @@ public class RobotBrain : Agent
         bool observedVisible = isVisible && !yoloDropout;
         lastObservedBallVisible = observedVisible;
         lastObservedBallAngle = observedVisible ? normAngle : 0f;
-        lastObservedBallDistance = observedVisible ? yoloCamera.GetNormalizedDistance() : 1f;
+        lastObservedBallDistance = observedVisible ? normalizedDistance : 1f;
 
         if (observedVisible)
         {
@@ -324,11 +394,11 @@ public class RobotBrain : Agent
         }
 
         // Заполнение вектора наблюдений (строго 15 значений)
-        float ultrasound = hardwareSensors != null ? hardwareSensors.ultrasoundValue : 1f;
+        float ultrasound = GetUltrasoundObservation();
         float ultrasoundNoise = useTrainingRandomization ? Random.Range(-0.05f, 0.05f) : 0f;
         sensor.AddObservation(Mathf.Clamp01(ultrasound + ultrasoundNoise));               // 1. УЗ-дальномер с шумом
-        sensor.AddObservation(hardwareSensors != null ? hardwareSensors.leftIRObstacle : 0);  // 2. Левый ИК
-        sensor.AddObservation(hardwareSensors != null ? hardwareSensors.rightIRObstacle : 0); // 3. Правый ИК
+        sensor.AddObservation(GetLeftIrObservation());                                    // 2. Левый ИК
+        sensor.AddObservation(GetRightIrObservation());                                   // 3. Правый ИК
         bool ballCaptureReady = IsBallCaptureReady();
         sensor.AddObservation(ballCaptureReady ? 1.0f : 0.0f); // 4. Мяч в зоне клешни
         sensor.AddObservation(observedVisible ? normAngle : 0f);                          // 5. Угол до мяча
@@ -394,6 +464,7 @@ public class RobotBrain : Agent
         ExecuteGripperAction(gripperAction);
         TryCompletePendingGrasp();
         int appliedFoldAction = IsHoldingBall() ? foldAction : 0;
+        RecordLiftCommandPenalties(appliedFoldAction);
         if (gripperController != null)
         {
             gripperController.SetLiftAction(appliedFoldAction);
@@ -402,6 +473,7 @@ public class RobotBrain : Agent
         // 3. Расчет наград
         CalculateRewards(
             gasNormalized,
+            steer,
             cameraTurn,
             appliedFoldAction == 1 ? 1f : appliedFoldAction == 2 ? -1f : 0f
         );
@@ -414,7 +486,9 @@ public class RobotBrain : Agent
             return;
         }
 
-        actionMask.SetActionEnabled(0, 1, !gripperController.IsClosed);
+        bool canCloseGripper = !gripperController.IsClosed
+            && (!requireCaptureReadyToCloseGripper || IsBallCaptureReady());
+        actionMask.SetActionEnabled(0, 1, canCloseGripper);
         // После подтверждённого захвата отпускать мяч до завершения задачи нельзя.
         // Это удаляет заведомо неправильную стратегию "схватить и сразу бросить".
         actionMask.SetActionEnabled(
@@ -437,7 +511,15 @@ public class RobotBrain : Agent
 
         if (actionID == 1 && !gripperController.IsClosed)
         {
+            bool captureReady = IsBallCaptureReady();
+            if (requireCaptureReadyToCloseGripper && !captureReady)
+            {
+                RecordPrematureGraspAttempt();
+                return;
+            }
+
             gripperController.SetClosed(true);
+            RecordGripperCloseCommand();
             captureAttemptPending = true;
             captureAttemptReported = false;
         }
@@ -489,14 +571,13 @@ public class RobotBrain : Agent
 
         if (!captureReady)
         {
-            return;
-        }
+            captureAttemptPending = false;
+            captureAttemptReported = false;
 
-        captureAttemptPending = false;
-        captureAttemptReported = false;
+            gripperController.SetLiftAction(0);
+            gripperController.ReleaseBall();
+            gripperController.SetClosed(false);
 
-        if (!captureReady)
-        {
             AddTrackedReward(failedGraspPenalty, "FailedGrasp");
             if (Academy.Instance.IsCommunicatorOn)
             {
@@ -506,9 +587,112 @@ public class RobotBrain : Agent
                     StatAggregationMethod.Sum
                 );
             }
+
+            return;
         }
 
+        captureAttemptPending = false;
+        captureAttemptReported = false;
+
         TryCaptureBall(captureReady);
+    }
+
+    private void RecordPrematureGraspAttempt()
+    {
+        AddTrackedReward(prematureGraspPenalty, "PrematureGrasp");
+        AddTrackedReward(gripperCloseCommandPenalty, "GripperCloseCommand");
+
+        if (!Academy.Instance.IsCommunicatorOn)
+        {
+            return;
+        }
+
+        Academy.Instance.StatsRecorder.Add(
+            "GFSX/PrematureGraspAttempts",
+            1f,
+            StatAggregationMethod.Sum
+        );
+        Academy.Instance.StatsRecorder.Add(
+            "GFSX/CaptureDistanceOnPrematureAttempt",
+            GetBallCaptureDistance()
+        );
+        Academy.Instance.StatsRecorder.Add(
+            "GFSX/BallVisibleOnPrematureAttempt",
+            lastObservedBallVisible ? 1f : 0f
+        );
+    }
+
+    private void RecordGripperCloseCommand()
+    {
+        AddTrackedReward(gripperCloseCommandPenalty, "GripperCloseCommand");
+
+        bool rapidClose = lastGripperCloseStep != int.MinValue
+            && StepCount - lastGripperCloseStep <= Mathf.Max(1, gripperCloseCooldownSteps);
+
+        if (rapidClose)
+        {
+            AddTrackedReward(rapidGripperClosePenalty, "RapidGripperClose");
+        }
+
+        lastGripperCloseStep = StepCount;
+
+        if (!Academy.Instance.IsCommunicatorOn)
+        {
+            return;
+        }
+
+        Academy.Instance.StatsRecorder.Add(
+            "GFSX/GripperCloseCommands",
+            1f,
+            StatAggregationMethod.Sum
+        );
+        if (rapidClose)
+        {
+            Academy.Instance.StatsRecorder.Add(
+                "GFSX/RapidGripperCloseCommands",
+                1f,
+                StatAggregationMethod.Sum
+            );
+        }
+    }
+
+    private void RecordLiftCommandPenalties(int appliedFoldAction)
+    {
+        if (appliedFoldAction != 2)
+        {
+            return;
+        }
+
+        AddTrackedReward(liftLowerCommandPenalty, "LiftLowerCommand");
+
+        bool rapidLower = lastLiftLowerStep != int.MinValue
+            && StepCount - lastLiftLowerStep <= Mathf.Max(1, liftLowerCooldownSteps);
+
+        if (rapidLower)
+        {
+            AddTrackedReward(rapidLiftLowerPenalty, "RapidLiftLower");
+        }
+
+        lastLiftLowerStep = StepCount;
+
+        if (!Academy.Instance.IsCommunicatorOn)
+        {
+            return;
+        }
+
+        Academy.Instance.StatsRecorder.Add(
+            "GFSX/LiftLowerCommands",
+            1f,
+            StatAggregationMethod.Sum
+        );
+        if (rapidLower)
+        {
+            Academy.Instance.StatsRecorder.Add(
+                "GFSX/RapidLiftLowerCommands",
+                1f,
+                StatAggregationMethod.Sum
+            );
+        }
     }
 
     private bool TryCaptureBall(bool captureReady)
@@ -557,11 +741,90 @@ public class RobotBrain : Agent
         return true;
     }
 
+    private void ReadBallObservation(
+        out bool isVisible,
+        out float normalizedAngle,
+        out float normalizedDistance)
+    {
+        if (ShouldUseRealVision())
+        {
+            isVisible = realVision.seesBall;
+            normalizedAngle = isVisible
+                ? Mathf.Clamp(realVision.normalizedAngle, -1f, 1f)
+                : 0f;
+            normalizedDistance = isVisible
+                ? Mathf.Clamp01(realVision.normalizedDistance)
+                : 1f;
+            return;
+        }
+
+        isVisible = yoloCamera != null && yoloCamera.IsBallVisible();
+        normalizedAngle = isVisible
+            ? yoloCamera.GetNormalizedHorizontalAngle()
+            : 0f;
+        normalizedDistance = isVisible
+            ? yoloCamera.GetNormalizedDistance()
+            : 1f;
+    }
+
+    private bool ShouldUseRealVision()
+    {
+        return useRealVisionWhenAvailable
+            && !Academy.Instance.IsCommunicatorOn
+            && realVision != null
+            && realVision.useYOLO;
+    }
+
+    private bool ShouldUseRealSensors()
+    {
+        return useRealSensorsWhenAvailable
+            && !Academy.Instance.IsCommunicatorOn
+            && realSensors != null;
+    }
+
+    private float GetUltrasoundObservation()
+    {
+        if (ShouldUseRealSensors())
+        {
+            return Mathf.Clamp01(realSensors.ultrasoundValue);
+        }
+
+        return hardwareSensors != null ? hardwareSensors.ultrasoundValue : 1f;
+    }
+
+    private float GetLeftIrObservation()
+    {
+        if (ShouldUseRealSensors())
+        {
+            return realSensors.leftIRObstacle != 0 ? 1f : 0f;
+        }
+
+        return hardwareSensors != null && hardwareSensors.leftIRObstacle != 0 ? 1f : 0f;
+    }
+
+    private float GetRightIrObservation()
+    {
+        if (ShouldUseRealSensors())
+        {
+            return realSensors.rightIRObstacle != 0 ? 1f : 0f;
+        }
+
+        return hardwareSensors != null && hardwareSensors.rightIRObstacle != 0 ? 1f : 0f;
+    }
+
     private bool IsHoldingBall()
     {
-        return gripperController != null
-            ? gripperController.IsHoldingBall()
-            : hasBall;
+        return hasBall
+            || IsRealBallHeld()
+            || (gripperController != null && gripperController.IsHoldingBall());
+    }
+
+    private bool IsRealBallHeld()
+    {
+        return ShouldUseRealSensors()
+            && realSensors.isBallInGripper
+            && gripperController != null
+            && gripperController.IsClosed;
     }
 
     private bool IsBallCaptureReady()
@@ -571,7 +834,8 @@ public class RobotBrain : Agent
             return true;
         }
 
-        return (hardwareSensors != null && hardwareSensors.isBallInGripper)
+        return (ShouldUseRealSensors() && realSensors.isBallInGripper)
+            || (hardwareSensors != null && hardwareSensors.isBallInGripper)
             || GetBallCaptureDistance() <= gripperCaptureRadius;
     }
 
@@ -593,6 +857,7 @@ public class RobotBrain : Agent
 
     private void CalculateRewards(
         float driveAction,
+        float steerAction,
         float cameraAction,
         float liftAction)
     {
@@ -633,7 +898,7 @@ public class RobotBrain : Agent
         }
         else
         {
-            ApplyApproachRewards();
+            ApplyApproachRewards(driveAction, steerAction, cameraAction);
         }
 
         if (Academy.Instance.IsCommunicatorOn)
@@ -652,7 +917,10 @@ public class RobotBrain : Agent
         }
     }
 
-    private void ApplyApproachRewards()
+    private void ApplyApproachRewards(
+        float driveAction,
+        float steerAction,
+        float cameraAction)
     {
         bool captureReady = IsBallCaptureReady();
         float distancePotential = GetDistancePotential();
@@ -671,13 +939,17 @@ public class RobotBrain : Agent
         }
         previousDistancePotential = distancePotential;
 
-        if (!initialBallVisible
-            && !firstAcquisitionAwarded
-            && lastObservedBallVisible
-            && !previousRewardBallVisible)
+        if (lastObservedBallVisible && !previousRewardBallVisible)
         {
-            AddTrackedReward(firstAcquisitionReward, "FirstAcquisition");
-            firstAcquisitionAwarded = true;
+            if (!initialBallVisible && !firstAcquisitionAwarded)
+            {
+                AddTrackedReward(firstAcquisitionReward, "FirstAcquisition");
+                firstAcquisitionAwarded = true;
+            }
+            else
+            {
+                AddTrackedReward(reacquisitionReward, "Reacquisition");
+            }
         }
 
         taskStage = captureReady
@@ -685,6 +957,9 @@ public class RobotBrain : Agent
             : lastObservedBallVisible
                 ? TaskStage.Approach
                 : TaskStage.Search;
+
+        ApplyHuntSearchRewards(captureReady, driveAction, steerAction, cameraAction);
+        ApplyBallFocusRewards(captureReady, driveAction, steerAction, cameraAction);
 
         // Невидимый мяч соответствует нулевому потенциалу. Потеря и повторное
         // обнаружение поэтому взаимно компенсируются и не дают фармить alignment.
@@ -705,6 +980,226 @@ public class RobotBrain : Agent
             AddTrackedReward(captureZoneReward, "CaptureZone");
             captureZoneAwarded = true;
         }
+    }
+
+    private void ApplyHuntSearchRewards(
+        bool captureReady,
+        float driveAction,
+        float steerAction,
+        float cameraAction)
+    {
+        float bodyPotential = GetSearchBodyBearingPotential();
+        float cameraPotential = GetSearchCameraBearingPotential();
+        float searchMemoryDistancePotential = GetDistancePotential();
+        float bodyDelta = bodyPotential - previousSearchBodyPotential;
+        float cameraDelta = cameraPotential - previousSearchCameraPotential;
+
+        if (!lastObservedBallVisible && !captureReady)
+        {
+            AddTrackedReward(
+                searchBodyBearingPotentialWeight * bodyDelta,
+                "SearchBodyBearingPotential"
+            );
+            AddTrackedReward(
+                searchCameraBearingPotentialWeight * cameraDelta,
+                "SearchCameraBearingPotential"
+            );
+
+            if (everSawBallThisEpisode)
+            {
+                AddTrackedReward(
+                    searchMemoryDistancePotentialWeight
+                        * (searchMemoryDistancePotential
+                            - previousSearchMemoryDistancePotential),
+                    "SearchMemoryDistancePotential"
+                );
+            }
+
+            float noVisionAge = Mathf.Clamp01(
+                timeSinceLastDetection
+                    / Mathf.Max(0.01f, maxTimeSinceDetectionSeconds)
+            );
+            AddTrackedReward(searchNoVisionPenalty, "NoVision");
+            AddTrackedReward(
+                -searchStaleVisionPenaltyScale * noVisionAge,
+                "StaleVision"
+            );
+
+            float searchActivity = Mathf.Clamp01(
+                Mathf.Abs(steerAction) + 0.75f * Mathf.Abs(cameraAction)
+            );
+            if (searchActivityReward != 0f)
+            {
+                AddTrackedReward(
+                    searchActivityReward * searchActivity,
+                    "SearchActivity"
+                );
+            }
+            if (searchCameraSweepReward != 0f)
+            {
+                AddTrackedReward(
+                    searchCameraSweepReward * Mathf.Abs(cameraAction),
+                    "SearchCameraSweep"
+                );
+            }
+            float searchProgress = Mathf.Max(0f, bodyDelta)
+                + Mathf.Max(0f, cameraDelta);
+            if (searchActivity > 0.05f && searchProgress < 0.0005f)
+            {
+                AddTrackedReward(
+                    -searchNoProgressPenaltyScale * searchActivity,
+                    "SearchNoProgress"
+                );
+            }
+            AddTrackedReward(
+                -blindForwardPenaltyScale * Mathf.Max(0f, driveAction),
+                "BlindForward"
+            );
+        }
+        else if (lastObservedBallVisible)
+        {
+            float centered = 1f - Mathf.Clamp01(Mathf.Abs(lastObservedBallAngle));
+            AddTrackedReward(
+                visibleRetentionReward * (0.5f + 0.5f * centered),
+                "VisibleRetention"
+            );
+        }
+
+        float cameraYawNorm = cameraYawLimitDegrees > 0f
+            ? Mathf.Clamp(cameraYawDegrees / cameraYawLimitDegrees, -1f, 1f)
+            : 0f;
+        float pushingIntoCameraLimit =
+            Mathf.Abs(cameraYawNorm) > 0.92f
+                && Mathf.Sign(cameraYawNorm) == Mathf.Sign(cameraAction)
+            ? Mathf.Abs(cameraAction)
+            : 0f;
+        AddTrackedReward(
+            -cameraLimitPenaltyScale * pushingIntoCameraLimit,
+            "CameraLimit"
+        );
+
+        if (!lastObservedBallVisible && !captureReady)
+        {
+            float cameraLimitAlignment =
+                Mathf.Sign(cameraYawNorm) == Mathf.Sign(steerAction)
+                ? Mathf.Abs(steerAction)
+                : 0f;
+            AddTrackedReward(
+                searchLimitBodyTurnReward
+                    * Mathf.Clamp01((Mathf.Abs(cameraYawNorm) - 0.65f) / 0.35f)
+                    * cameraLimitAlignment,
+                "SearchLimitBodyTurn"
+            );
+        }
+
+        previousSearchBodyPotential = bodyPotential;
+        previousSearchCameraPotential = cameraPotential;
+        previousSearchMemoryDistancePotential = searchMemoryDistancePotential;
+    }
+
+    private void ApplyBallFocusRewards(
+        bool captureReady,
+        float driveAction,
+        float steerAction,
+        float cameraAction)
+    {
+        if (lastObservedBallVisible)
+        {
+            everSawBallThisEpisode = true;
+            visibleDecisionStreak++;
+
+            AddTrackedReward(ballVisibleFocusReward, "BallVisibleFocus");
+            float centered = 1f - Mathf.Clamp01(Mathf.Abs(lastObservedBallAngle));
+            AddTrackedReward(
+                ballCenteredFocusReward * centered,
+                "BallCenteredFocus"
+            );
+            AddTrackedReward(
+                visibleStreakReward
+                    * centered
+                    * Mathf.Clamp01(visibleDecisionStreak / 20f),
+                "VisibleStreak"
+            );
+
+            float closeness = 1f - Mathf.Clamp01(lastObservedBallDistance);
+            AddTrackedReward(
+                closeVisibleBallReward * closeness,
+                "CloseVisibleBall"
+            );
+            float visibleDistanceImprovement =
+                bestVisibleDistanceNormalized
+                    - Mathf.Clamp01(lastObservedBallDistance);
+            if (visibleDistanceImprovement > 0.002f)
+            {
+                AddTrackedReward(
+                    visibleDistanceProgressWeight
+                        * visibleDistanceImprovement,
+                    "VisibleDistanceProgress"
+                );
+                bestVisibleDistanceNormalized =
+                    Mathf.Clamp01(lastObservedBallDistance);
+            }
+
+            if (!captureReady)
+            {
+                float forward = Mathf.Max(0f, driveAction);
+                float turn = Mathf.Abs(steerAction);
+                float farEnoughToApproach = Mathf.Clamp01(lastObservedBallDistance);
+                float centeredForward = forward * centered;
+                float turnWithoutApproach = Mathf.Max(0f, turn - forward);
+                float wrongWayForward = forward
+                    * Mathf.Clamp01((Mathf.Abs(lastObservedBallAngle) - 0.35f) / 0.65f);
+                float ballSide = Mathf.Sign(lastObservedBallAngle);
+                float angleError = Mathf.Clamp01(Mathf.Abs(lastObservedBallAngle));
+                float turnTowardBall = ballSide == 0f
+                    ? 0f
+                    : Mathf.Max(0f, steerAction * ballSide);
+                float cameraTowardBall = ballSide == 0f
+                    ? 0f
+                    : Mathf.Max(0f, cameraAction * ballSide);
+
+                AddTrackedReward(
+                    visibleBallApproachReward
+                        * forward
+                        * Mathf.Max(0.25f, centered)
+                        * farEnoughToApproach,
+                    "VisibleBallApproach"
+                );
+                AddTrackedReward(
+                    centeredForwardApproachReward
+                        * centeredForward
+                        * farEnoughToApproach,
+                    "CenteredForwardApproach"
+                );
+                AddTrackedReward(
+                    -visibleSpinPenaltyScale * turnWithoutApproach,
+                    "VisibleSpin"
+                );
+                AddTrackedReward(
+                    -centeredSpinPenaltyScale * centered * turnWithoutApproach,
+                    "CenteredSpin"
+                );
+                AddTrackedReward(
+                    -visibleWrongWayPenaltyScale * wrongWayForward,
+                    "VisibleWrongWayForward"
+                );
+                AddTrackedReward(
+                    visibleTurnTowardBallReward * angleError * turnTowardBall,
+                    "VisibleTurnTowardBall"
+                );
+                AddTrackedReward(
+                    visibleCameraTowardBallReward * angleError * cameraTowardBall,
+                    "VisibleCameraTowardBall"
+                );
+            }
+            return;
+        }
+
+        if (previousRewardBallVisible)
+        {
+            AddTrackedReward(lostBallFocusPenalty, "LostBallFocus");
+        }
+        visibleDecisionStreak = 0;
     }
 
     private void ApplyLiftRewards()
@@ -857,6 +1352,68 @@ public class RobotBrain : Agent
             cameraYawDegrees + yoloCamera.GetSignedHorizontalAngleToBall()
         );
         return 1f - Mathf.Clamp01(Mathf.Abs(bodyBearing) / 180f);
+    }
+
+    private float GetSearchBodyBearingPotential()
+    {
+        float bearing = GetSignedBodyBearingToBall();
+        if (float.IsNaN(bearing) || float.IsInfinity(bearing))
+        {
+            return 0f;
+        }
+
+        return 1f - Mathf.Clamp01(Mathf.Abs(bearing) / 180f);
+    }
+
+    private float GetSearchCameraBearingPotential()
+    {
+        if (yoloCamera == null)
+        {
+            return 0f;
+        }
+
+        float bearing = yoloCamera.GetSignedHorizontalAngleToBall();
+        if (float.IsNaN(bearing) || float.IsInfinity(bearing))
+        {
+            return 0f;
+        }
+
+        return 1f - Mathf.Clamp01(Mathf.Abs(bearing) / 180f);
+    }
+
+    private float GetSignedBodyBearingToBall()
+    {
+        if (yoloCamera == null)
+        {
+            return 0f;
+        }
+
+        Transform ball = yoloCamera.GetBallTransform();
+        if (ball == null || !IsFinite(ball.position) || !IsFinite(transform.position))
+        {
+            return 0f;
+        }
+
+        Vector3 forward = trackController != null
+            ? transform.TransformDirection(trackController.forwardDirection.normalized)
+            : transform.forward;
+        Vector3 flatForward = Vector3.ProjectOnPlane(forward, Vector3.up);
+        Vector3 flatDirectionToBall = Vector3.ProjectOnPlane(
+            ball.position - transform.position,
+            Vector3.up
+        );
+
+        if (flatForward.sqrMagnitude < 0.0001f
+            || flatDirectionToBall.sqrMagnitude < 0.0001f)
+        {
+            return 0f;
+        }
+
+        return Vector3.SignedAngle(
+            flatForward.normalized,
+            flatDirectionToBall.normalized,
+            Vector3.up
+        );
     }
 
     private float GetCurrentBallLiftHeight()

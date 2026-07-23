@@ -18,8 +18,16 @@ public sealed class ROSBridge : MonoBehaviour
     [Header("Activation")]
     [Tooltip("Enable only on the single robot used for physical inference.")]
     [SerializeField] private bool bridgeEnabled = false;
+    [Tooltip("Allow enabling this bridge in standalone builds with --ros-bridge.")]
+    [SerializeField] private bool enableFromCommandLine = true;
     [SerializeField] private bool disableWhileTrainerConnected = true;
     [SerializeField] private bool enforceSinglePublisher = true;
+
+    [Header("ROS Connection Override")]
+    [SerializeField] private bool configureConnectionFromCommandLine = true;
+    [SerializeField] private string enableArgument = "--ros-bridge";
+    [SerializeField] private string rosIpArgument = "--ros-ip";
+    [SerializeField] private string rosPortArgument = "--ros-port";
 
     [Header("Robot Components")]
     [SerializeField] private RobotBrain robotBrain;
@@ -35,19 +43,26 @@ public sealed class ROSBridge : MonoBehaviour
 
     [Header("Physical Limits")]
     [Min(0.001f)]
-    [SerializeField] private float maxLinearSpeedMetersPerSecond = 0.25f;
+    [SerializeField] private float maxLinearSpeedMetersPerSecond = 0.08f;
     [Min(0.001f)]
-    [SerializeField] private float maxAngularSpeedRadiansPerSecond = 1.5f;
+    [SerializeField] private float maxAngularSpeedRadiansPerSecond = 0.45f;
     [Min(0.001f)]
-    [SerializeField] private float cameraTurnSpeedDegreesPerSecond = 50f;
+    [SerializeField] private float cameraTurnSpeedDegreesPerSecond = 25f;
 
     [Header("Filtering")]
     [Range(0.01f, 1f)]
-    [SerializeField] private float emaAlpha = 0.8f;
+    [SerializeField] private float emaAlpha = 0.25f;
     [Range(0f, 0.25f)]
-    [SerializeField] private float commandDeadzone = 0.01f;
+    [SerializeField] private float commandDeadzone = 0.03f;
     [Min(0f)]
-    [SerializeField] private float minimumPublishIntervalSeconds = 0.05f;
+    [SerializeField] private float minimumPublishIntervalSeconds = 0.10f;
+
+    [Header("Manipulator Safety")]
+    [Min(0f)]
+    [SerializeField] private float gripperCommandCooldownSeconds = 0.70f;
+    [Min(0f)]
+    [SerializeField] private float liftCommandCooldownSeconds = 0.20f;
+    [SerializeField] private bool blockLiftUntilGripperClosed = true;
 
     [Header("Fail-safe")]
     [Min(0.05f)]
@@ -73,10 +88,15 @@ public sealed class ROSBridge : MonoBehaviour
     private float previousCameraYawDegrees;
     private float lastPolicyStepRealtime;
     private float lastPublishRealtime = float.NegativeInfinity;
+    private float lastGripperCommandRealtime = float.NegativeInfinity;
+    private float lastLiftCommandRealtime = float.NegativeInfinity;
     private float lastCameraSampleRealtime;
+    private string runtimeRosIpOverride;
+    private int runtimeRosPortOverride = -1;
 
     private void Awake()
     {
+        ApplyRuntimeConfiguration();
         ResolveReferences();
         CaptureInitialState();
     }
@@ -181,6 +201,12 @@ public sealed class ROSBridge : MonoBehaviour
 
         ResolveReferences();
 
+        if (disableWhileTrainerConnected && Academy.Instance.IsCommunicatorOn)
+        {
+            bridgeEnabled = false;
+            return false;
+        }
+
         if (robotBrain == null || trackController == null)
         {
             Debug.LogError(
@@ -213,6 +239,7 @@ public sealed class ROSBridge : MonoBehaviour
             }
 
             ros = ROSConnection.GetOrCreateInstance();
+            ApplyConnectionOverride(ros);
             ros.RegisterPublisher<TwistMsg>(cmdVelTopic);
             ros.RegisterPublisher<Float32Msg>(cameraCommandTopic);
             ros.RegisterPublisher<Int32Msg>(gripperCommandTopic);
@@ -232,7 +259,13 @@ public sealed class ROSBridge : MonoBehaviour
             PublishCamera(0f);
             PublishLift(0);
 
-            Debug.Log("ROSBridge initialized for GFS-X inference.", this);
+            Debug.Log(
+                $"ROSBridge initialized for GFS-X inference. " +
+                $"Publishing '{cmdVelTopic}', '{cameraCommandTopic}', " +
+                $"'{gripperCommandTopic}', '{liftCommandTopic}' to " +
+                $"{ros.RosIPAddress}:{ros.RosPort}.",
+                this
+            );
             return true;
         }
         catch (System.Exception exception)
@@ -392,12 +425,20 @@ public sealed class ROSBridge : MonoBehaviour
 
     private void PublishGripperState(bool closed)
     {
+        float now = Time.realtimeSinceStartup;
+        if (gripperStateInitialized &&
+            now - lastGripperCommandRealtime < gripperCommandCooldownSeconds)
+        {
+            return;
+        }
+
         ros.Publish(
             gripperCommandTopic,
             new Int32Msg(closed ? 1 : 2)
         );
         lastClosedState = closed;
         gripperStateInitialized = true;
+        lastGripperCommandRealtime = now;
     }
 
     private void PublishLiftFromMechanism()
@@ -417,6 +458,11 @@ public sealed class ROSBridge : MonoBehaviour
                 ? 2
                 : 0;
 
+        if (blockLiftUntilGripperClosed && !gripperController.IsClosed)
+        {
+            command = 0;
+        }
+
         PublishLift(command);
     }
 
@@ -428,8 +474,15 @@ public sealed class ROSBridge : MonoBehaviour
             return;
         }
 
+        float now = Time.realtimeSinceStartup;
+        if (now - lastLiftCommandRealtime < liftCommandCooldownSeconds)
+        {
+            return;
+        }
+
         ros.Publish(liftCommandTopic, new Int32Msg(command));
         lastLiftCommand = command;
+        lastLiftCommandRealtime = now;
     }
 
     private void PublishEmergencyStop(string reason)
@@ -475,5 +528,130 @@ public sealed class ROSBridge : MonoBehaviour
         }
 
         ownsPublisherSlot = false;
+    }
+
+    private void ApplyRuntimeConfiguration()
+    {
+        string[] args = System.Environment.GetCommandLineArgs();
+
+        if (enableFromCommandLine &&
+            (HasArgument(args, enableArgument) ||
+             ReadBoolEnvironment("GFSX_ROS_BRIDGE")))
+        {
+            bridgeEnabled = true;
+        }
+
+        if (!configureConnectionFromCommandLine)
+        {
+            return;
+        }
+
+        if (TryReadArgumentValue(args, rosIpArgument, out string rosIp) ||
+            TryReadEnvironment("GFSX_ROS_IP", out rosIp))
+        {
+            runtimeRosIpOverride = rosIp;
+        }
+
+        if (TryReadArgumentValue(args, rosPortArgument, out string rosPortText) ||
+            TryReadEnvironment("GFSX_ROS_PORT", out rosPortText))
+        {
+            if (int.TryParse(rosPortText, out int rosPort))
+            {
+                runtimeRosPortOverride = rosPort;
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"Ignoring invalid ROS port override '{rosPortText}'.",
+                    this
+                );
+            }
+        }
+    }
+
+    private void ApplyConnectionOverride(ROSConnection connection)
+    {
+        bool hasIpOverride = !string.IsNullOrWhiteSpace(runtimeRosIpOverride);
+        bool hasPortOverride = runtimeRosPortOverride > 0;
+        if (!hasIpOverride && !hasPortOverride)
+        {
+            return;
+        }
+
+        string ip = hasIpOverride
+            ? runtimeRosIpOverride
+            : connection.RosIPAddress;
+        int port = hasPortOverride
+            ? runtimeRosPortOverride
+            : connection.RosPort;
+
+        connection.ConnectOnStart = false;
+        connection.Disconnect();
+        connection.Connect(ip, port);
+    }
+
+    private static bool HasArgument(string[] args, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return false;
+        }
+
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (string.Equals(args[i], name, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryReadArgumentValue(
+        string[] args,
+        string name,
+        out string value)
+    {
+        value = null;
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return false;
+        }
+
+        string equalsPrefix = name + "=";
+        for (int i = 0; i < args.Length; i++)
+        {
+            string arg = args[i];
+            if (arg.StartsWith(equalsPrefix, System.StringComparison.OrdinalIgnoreCase))
+            {
+                value = arg.Substring(equalsPrefix.Length);
+                return !string.IsNullOrWhiteSpace(value);
+            }
+
+            if (string.Equals(arg, name, System.StringComparison.OrdinalIgnoreCase) &&
+                i + 1 < args.Length)
+            {
+                value = args[i + 1];
+                return !string.IsNullOrWhiteSpace(value);
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryReadEnvironment(string name, out string value)
+    {
+        value = System.Environment.GetEnvironmentVariable(name);
+        return !string.IsNullOrWhiteSpace(value);
+    }
+
+    private static bool ReadBoolEnvironment(string name)
+    {
+        string value = System.Environment.GetEnvironmentVariable(name);
+        return string.Equals(value, "1", System.StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "true", System.StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "yes", System.StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "on", System.StringComparison.OrdinalIgnoreCase);
     }
 }
