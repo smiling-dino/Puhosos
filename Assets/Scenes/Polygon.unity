@@ -352,10 +352,10 @@ PrefabInstance:
     - target: {fileID: 3145633081714692616, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: m_Model
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 5022602860645237092, guid: f9b006075af3c0d4ea0b57845a8ef369, type: 3}
     - target: {fileID: 3145633081714692616, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: m_BehaviorType
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3145633081714692616, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: m_DeterministicInference
@@ -363,7 +363,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8241631975803193342, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: enableRosBridge
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8361043704425432686, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: cmdVelTopic
@@ -371,7 +371,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8361043704425432686, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: bridgeEnabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8361043704425432686, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: liftCommandTopic
@@ -384,6 +384,14 @@ PrefabInstance:
     - target: {fileID: 8361043704425432686, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: gripperCommandTopic
       value: gripper_cmd
+      objectReference: {fileID: 0}
+    - target: {fileID: 8361043704425432686, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: activationServerFromCommandLine
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8361043704425432686, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      propertyPath: requireStartJsonBeforePublishing
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8782922737251685030, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: m_LocalPosition.x
