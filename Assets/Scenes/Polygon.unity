@@ -386,10 +386,6 @@ PrefabInstance:
       value: gripper_cmd
       objectReference: {fileID: 0}
     - target: {fileID: 8361043704425432686, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
-      propertyPath: activationServerFromCommandLine
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8361043704425432686, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       propertyPath: requireStartJsonBeforePublishing
       value: 0
       objectReference: {fileID: 0}
