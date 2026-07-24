@@ -44,9 +44,10 @@ public sealed class RobotJsonStartServer : MonoBehaviour
     {
         get
         {
-            lock (stateLock)
+            RobotJsonStartServer source = activeServer != null ? activeServer : this;
+            lock (source.stateLock)
             {
-                return startAccepted;
+                return source.startAccepted;
             }
         }
     }
@@ -55,9 +56,10 @@ public sealed class RobotJsonStartServer : MonoBehaviour
     {
         get
         {
-            lock (stateLock)
+            RobotJsonStartServer source = activeServer != null ? activeServer : this;
+            lock (source.stateLock)
             {
-                return lastTargetClass;
+                return source.lastTargetClass;
             }
         }
     }
@@ -347,9 +349,14 @@ public sealed class RobotJsonStartServer : MonoBehaviour
             );
         }
 
+        string className = TryFindStringField(payload, "class_name");
         lock (stateLock)
         {
             startAccepted = true;
+            if (!string.IsNullOrWhiteSpace(className))
+            {
+                lastTargetClass = className;
+            }
         }
 
         startRequested = true;

@@ -110,6 +110,7 @@ public sealed class ROSBridge : MonoBehaviour
 
     private void Update()
     {
+        ResolveJsonStartServer();
         if (jsonStartServer == null ||
             !jsonStartServer.StartAccepted)
         {
@@ -207,7 +208,7 @@ public sealed class ROSBridge : MonoBehaviour
 
     private void ResolveReferences()
     {
-        jsonStartServer ??= GetComponent<RobotJsonStartServer>();
+        ResolveJsonStartServer();
         robotBrain ??= GetComponent<RobotBrain>();
         trackController ??= GetComponent<TrackController>();
         gripperController ??= GetComponent<GripperController>();
@@ -217,6 +218,18 @@ public sealed class ROSBridge : MonoBehaviour
             Camera childCamera = GetComponentInChildren<Camera>(true);
             cameraServo = childCamera != null ? childCamera.transform : null;
         }
+    }
+
+    private void ResolveJsonStartServer()
+    {
+        RobotJsonStartServer activeServer = RobotJsonStartServer.ActiveServer;
+        if (activeServer != null)
+        {
+            jsonStartServer = activeServer;
+            return;
+        }
+
+        jsonStartServer ??= GetComponent<RobotJsonStartServer>();
     }
 
     private void CaptureInitialState()

@@ -518,8 +518,14 @@ public class RobotBrain : Agent
 
     private void ResolveJsonStartServer()
     {
+        RobotJsonStartServer activeServer = RobotJsonStartServer.ActiveServer;
+        if (activeServer != null)
+        {
+            jsonStartServer = activeServer;
+            return;
+        }
+
         jsonStartServer ??= GetComponent<RobotJsonStartServer>();
-        jsonStartServer ??= RobotJsonStartServer.ActiveServer;
     }
 
     private void HoldStillUntilJsonStart()
