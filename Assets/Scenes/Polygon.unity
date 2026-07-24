@@ -439,6 +439,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6829131032473506175, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       insertIndex: -1
       addedObject: {fileID: 845908116}
+    - targetCorrespondingSourceObject: {fileID: 6829131032473506175, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 845908119}
     - targetCorrespondingSourceObject: {fileID: 1914238687447271830, guid: 29a3561b745ddc847bf23e4553bbc666, type: 3}
       insertIndex: -1
       addedObject: {fileID: 739905040}
@@ -495,6 +498,27 @@ MonoBehaviour:
   isBallVisible: 0
   ballNormalizedAngle: 0
   ballNormalizedDistance: 1
+--- !u!114 &845908119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 845908115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8e2b432b1634b25b82c9363d7f92f33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RobotJsonStartServer
+  serverEnabled: 1
+  enableFromCommandLine: 1
+  serverArgument: --activation-server
+  portArgument: --activation-port
+  listenAddress: 0.0.0.0
+  listenPort: 8765
+  healthPath: /health
+  setTargetPath: /set_target
+  activatePath: /activate
 --- !u!850595691 &1354181355
 LightingSettings:
   m_ObjectHideFlags: 0

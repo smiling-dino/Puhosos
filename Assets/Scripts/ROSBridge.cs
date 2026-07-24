@@ -111,7 +111,7 @@ public sealed class ROSBridge : MonoBehaviour
     private void Update()
     {
         if (jsonStartServer == null ||
-            !jsonStartServer.ConsumeStartRequest())
+            !jsonStartServer.StartAccepted)
         {
             return;
         }

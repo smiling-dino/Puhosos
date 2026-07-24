@@ -38,6 +38,7 @@ public sealed class RobotJsonStartServer : MonoBehaviour
     private string lastTargetClass;
 
     public bool ServerEnabled => serverEnabled;
+    public static RobotJsonStartServer ActiveServer => activeServer;
 
     public bool StartAccepted
     {

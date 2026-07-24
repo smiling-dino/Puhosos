@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
+using Unity.MLAgents.Policies;
 using Unity.MLAgents.Sensors;
 using UnityEngine.InputSystem;
 using Unity.Robotics.ROSTCPConnector;
@@ -124,6 +125,10 @@ public class RobotBrain : Agent
     [SerializeField] private int minActionLatencyDecisions = 1;
     [SerializeField] private int maxActionLatencyDecisions = 4;
 
+    [Header("JSON Start Gate")]
+    [SerializeField] private RobotJsonStartServer jsonStartServer;
+    [SerializeField] private bool requireStartJsonBeforeInference = true;
+
     [Header("ROS Bridge")]
     [SerializeField] private bool enableRosBridge = false;
     [SerializeField] private float rosPublishInterval = 0.05f;
@@ -143,6 +148,7 @@ public class RobotBrain : Agent
     [SerializeField] private string rosHasBallTopic = "/gfsx/state/has_ball";
 
     private TrackController trackController;
+    private BehaviorParameters behaviorParameters;
     private Rigidbody rb;
 
     private float lastKnownBallDirection = 0f;
@@ -222,7 +228,9 @@ public class RobotBrain : Agent
     public override void Initialize()
     {
         trackController = GetComponent<TrackController>();
+        behaviorParameters = GetComponent<BehaviorParameters>();
         rb = GetComponent<Rigidbody>();
+        ResolveJsonStartServer();
         realVision ??= GetComponent<RealVision>();
         realSensors ??= GetComponent<RealSensorsReceiver>();
         DecisionRequester decisionRequester = GetComponent<DecisionRequester>();
@@ -244,6 +252,12 @@ public class RobotBrain : Agent
 
     private void FixedUpdate()
     {
+        if (ShouldWaitForJsonStart())
+        {
+            HoldStillUntilJsonStart();
+            return;
+        }
+
         PublishRosTelemetryIfNeeded();
     }
 
@@ -426,6 +440,12 @@ public class RobotBrain : Agent
 
     public override void OnActionReceived(ActionBuffers actions)
     {
+        if (ShouldWaitForJsonStart())
+        {
+            HoldStillUntilJsonStart();
+            return;
+        }
+
         // 1. Считывание непрерывных действий с опциональной задержкой команд
         Vector3 delayedActions = GetDelayedContinuousActions(actions);
         float gasNormalized = Mathf.Clamp(delayedActions.x, -1f, 1f);
@@ -477,6 +497,48 @@ public class RobotBrain : Agent
             cameraTurn,
             appliedFoldAction == 1 ? 1f : appliedFoldAction == 2 ? -1f : 0f
         );
+    }
+
+    private bool ShouldWaitForJsonStart()
+    {
+        if (!requireStartJsonBeforeInference || Academy.Instance.IsCommunicatorOn)
+        {
+            return false;
+        }
+
+        ResolveJsonStartServer();
+        if (jsonStartServer == null || jsonStartServer.StartAccepted)
+        {
+            return false;
+        }
+
+        return behaviorParameters == null ||
+            behaviorParameters.BehaviorType != BehaviorType.HeuristicOnly;
+    }
+
+    private void ResolveJsonStartServer()
+    {
+        jsonStartServer ??= GetComponent<RobotJsonStartServer>();
+        jsonStartServer ??= RobotJsonStartServer.ActiveServer;
+    }
+
+    private void HoldStillUntilJsonStart()
+    {
+        if (trackController != null)
+        {
+            trackController.ResetMotors();
+        }
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
+        if (gripperController != null)
+        {
+            gripperController.SetLiftAction(0);
+        }
     }
 
     public override void WriteDiscreteActionMask(IDiscreteActionMask actionMask)
