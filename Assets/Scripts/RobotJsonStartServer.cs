@@ -9,6 +9,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using Unity.Robotics.ROSTCPConnector;
+using RosMessageTypes.Std;
 
 [DisallowMultipleComponent]
 public sealed class RobotJsonStartServer : MonoBehaviour
@@ -26,13 +28,20 @@ public sealed class RobotJsonStartServer : MonoBehaviour
     [SerializeField] private string setTargetPath = "/set_target";
     [SerializeField] private string activatePath = "/activate";
 
+    [Header("ROS Start Signal")]
+    [SerializeField] private bool publishStartSignalToRos = true;
+    [SerializeField] private string startSignalTopic = "/cmd_activate";
+    [SerializeField] private int startSignalValue = 1;
+
     private static RobotJsonStartServer activeServer;
 
     private readonly object stateLock = new object();
     private TcpListener listener;
     private CancellationTokenSource cancellation;
     private Task serverTask;
+    private ROSConnection ros;
     private bool ownsServerSlot;
+    private bool startSignalPublisherRegistered;
     private bool startAccepted;
     private volatile bool startRequested;
     private string lastTargetClass;
@@ -276,6 +285,8 @@ public sealed class RobotJsonStartServer : MonoBehaviour
                     ["serverEnabled"] = serverEnabled,
                     ["startAccepted"] = accepted,
                     ["pendingStartRequest"] = startRequested,
+                    ["startSignalTopic"] = startSignalTopic,
+                    ["startSignalValue"] = startSignalValue,
                     ["lastTargetClass"] = targetClass ?? string.Empty
                 }
             );
@@ -360,6 +371,7 @@ public sealed class RobotJsonStartServer : MonoBehaviour
         }
 
         startRequested = true;
+        PublishStartSignalToRos();
         return new ApiResponse(
             200,
             new JObject
@@ -369,6 +381,37 @@ public sealed class RobotJsonStartServer : MonoBehaviour
                 ["state"] = "start"
             }
         );
+    }
+
+    private void PublishStartSignalToRos()
+    {
+        if (!publishStartSignalToRos || string.IsNullOrWhiteSpace(startSignalTopic))
+        {
+            return;
+        }
+
+        try
+        {
+            ros ??= ROSConnection.GetOrCreateInstance();
+            if (!startSignalPublisherRegistered)
+            {
+                ros.RegisterPublisher<Int32Msg>(startSignalTopic);
+                startSignalPublisherRegistered = true;
+            }
+
+            ros.Publish(startSignalTopic, new Int32Msg(startSignalValue));
+            Debug.Log(
+                $"Robot JSON start server published {startSignalValue} to '{startSignalTopic}'.",
+                this
+            );
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning(
+                $"Failed to publish robot start signal to '{startSignalTopic}': {exception.Message}",
+                this
+            );
+        }
     }
 
     private static async Task<HttpRequest> ReadHttpRequest(NetworkStream stream)
