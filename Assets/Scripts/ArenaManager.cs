@@ -34,7 +34,11 @@ public class ArenaManager : MonoBehaviour
             obs.SetActive(false);
             spawnedObstacles.Add(obs);
         }
+
+        ResetArena();
     }
+
+    
 
     /// <summary>
     /// Вызывается агентом при начале нового эпизода

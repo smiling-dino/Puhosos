@@ -7,126 +7,62 @@ public class ROSBridge : MonoBehaviour
 {
     private ROSConnection ros;
 
+    [Header("=== Ссылки на скрипты Unity ===")]
+    public VirtualSensors virtualSensors;
+    public TrackController trackController;
+
     [Header("=== Топики ROS ===")]
     public string cmdVelTopic = "/cmd_vel";
-    public string cmdGripperTopic = "/cmd_gripper";
-    public string cmdCameraPanTopic = "/cmd_camera_pan";
+    public string sensorDataTopic = "/sensor/data";
 
-    [Header("=== Лимиты робота ===")]
-    public float maxLinearSpeed = 0.5f;   // м/с
-    public float maxAngularSpeed = 1.5f;  // рад/с
-
-    [Header("=== Настройки безопасности и сглаживания ===")]
-    [Range(0.1f, 1f)]
-    [Tooltip("Коэффициент сглаживания: 1 - без сглаживания, 0.1 - максимальная плавность")]
-    public float emaAlpha = 0.8f;         
+    [Header("=== Настройки ===")]
+    public float publishRateHz = 15f; 
     
-    [Tooltip("Время в секундах без команд до экстренной остановки (Watchdog)")]
-    public float watchdogTimeout = 0.5f;
-
-    // Внутренние переменные
-    private float smoothGas = 0f;
-    private float smoothSteer = 0f;
-    private float lastCommandTime;
-    private bool isEmergencyStopped = false;
+    private float lastPublishTime;
 
     void Start()
     {
         ros = ROSConnection.GetOrCreateInstance();
 
-        // Регистрация топиков
-        ros.RegisterPublisher<TwistMsg>(cmdVelTopic);
-        ros.RegisterPublisher<Int32Msg>(cmdGripperTopic);
-        ros.RegisterPublisher<Float32Msg>(cmdCameraPanTopic);
+        // 1. Подписываемся на команды моторов от твоего Python FSM
+        ros.Subscribe<TwistMsg>(cmdVelTopic, OnCmdVelReceived);
 
-        lastCommandTime = Time.time;
+        // 2. Регистрируем публикатор сенсоров
+        ros.RegisterPublisher<QuaternionMsg>(sensorDataTopic);
     }
 
     void Update()
     {
-        // РЕАЛИЗАЦИЯ ЗАДАЧИ ДЛЯ СТУДЕНТОВ: Watchdog / Fail-safe
-        if (Time.time - lastCommandTime > watchdogTimeout && !isEmergencyStopped)
+        // Публикуем данные с датчиков с заданной частотой
+        if (Time.time - lastPublishTime > (1f / publishRateHz))
         {
-            ApplyEmergencyStop();
+            PublishSensorData();
+            lastPublishTime = Time.time;
         }
     }
 
-    /// <summary>
-    /// Основной метод управления движением (с фильтром EMA)
-    /// </summary>
-    public void PublishCmdVel(float gas, float steer)
+    private void PublishSensorData()
     {
-        // Обновляем таймер Watchdog
-        lastCommandTime = Time.time;
-        isEmergencyStopped = false;
+        if (virtualSensors == null) return;
 
-        // Защита от дрейфа (Hard Stop)
-        if (Mathf.Approximately(gas, 0f) && Mathf.Approximately(steer, 0f))
-        {
-            smoothGas = 0f;
-            smoothSteer = 0f;
-        }
-        else
-        {
-            // Формула экспоненциального сглаживания (EMA)
-            smoothGas = emaAlpha * gas + (1f - emaAlpha) * smoothGas;
-            smoothSteer = emaAlpha * steer + (1f - emaAlpha) * smoothSteer;
-        }
+        QuaternionMsg msg = new QuaternionMsg();
+        msg.x = 0f; // Не используется в твоем Python скрипте
+        msg.y = virtualSensors.leftIRObstacle;   // Левый
+        msg.z = virtualSensors.rightIRObstacle;  // Правый
+        msg.w = virtualSensors.centerIRObstacle; // Центральный
 
-        TwistMsg twist = new TwistMsg();
-        twist.linear.x = smoothGas * maxLinearSpeed;
-        // Оставлен минус из изначального кода друга для инверсии оси
-        twist.angular.z = -smoothSteer * maxAngularSpeed; 
-
-        ros.Publish(cmdVelTopic, twist);
+        ros.Publish(sensorDataTopic, msg);
     }
 
-    /// <summary>
-    /// Экстренная остановка при потере связи с агентом
-    /// </summary>
-    private void ApplyEmergencyStop()
+    private void OnCmdVelReceived(TwistMsg msg)
     {
-        smoothGas = 0f;
-        smoothSteer = 0f;
+        if (trackController == null) return;
 
-        TwistMsg stopMsg = new TwistMsg();
-        stopMsg.linear.x = 0f;
-        stopMsg.angular.z = 0f;
+        float linearX = (float)msg.linear.x;
+        float angularZ = (float)msg.angular.z;
 
-        ros.Publish(cmdVelTopic, stopMsg);
-        Debug.LogWarning($"<color=red>[WATCHDOG]</color> Команды от ИИ не поступали более {watchdogTimeout}с! Выполнена экстренная остановка.");
-        
-        isEmergencyStopped = true; // Блокируем спам сообщениями в консоль
-    }
-
-    /// <summary>
-    /// Управление клешней
-    /// </summary>
-    public void PublishGripperCmd(int actionID)
-    {
-        Int32Msg msg = new Int32Msg { data = actionID };
-        ros.Publish(cmdGripperTopic, msg);
-    }
-
-    /// <summary>
-    /// Управление камерой
-    /// </summary>
-    public void PublishCameraCmd(float angleDegrees)
-    {
-        Float32Msg msg = new Float32Msg { data = angleDegrees };
-        ros.Publish(cmdCameraPanTopic, msg);
-    }
-
-    // ==========================================
-    // МЕТОДЫ СОВМЕСТИМОСТИ
-    // ==========================================
-    public void PublishCommand(float gas, float steer)
-    {
-        PublishCmdVel(gas, steer);
-    }
-
-    public void PublishArmCmd(int actionID)
-    {
-        PublishGripperCmd(actionID);
+        // Передаем сырые команды в TrackController. 
+        // Знак angularZ инвертирован, чтобы соответствовать физике (как было у вас).
+        trackController.SetInputs(linearX, -angularZ, 0f);
     }
 }

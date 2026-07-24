@@ -15,26 +15,24 @@ public class VirtualSensors : MonoBehaviour
     public Transform gripperIRPoint;
 
     [Header("=== Настройки Ультразвука ===")]
-    [Tooltip("Максимальная дистанция УЗ датчика (метров)")]
     public float usMaxDistance = 3.0f;
-    [Tooltip("Количество лучей в конусе обзора")]
     public int usRayCount = 5;
-    [Tooltip("Угол конуса обзора в градусах")]
     public float usConeAngle = 30f;
-    [Tooltip("Тег мяча, который УЗ датчик должен игнорировать")]
     public string ballTag = "TargetBall";
-    [Tooltip("Тег куба (зоны выгрузки), который УЗ датчик должен игнорировать")]
-    public string cubeTag = "TargetCube"; // <--- ДОБАВЛЕНО
+    public string cubeTag = "TargetCube"; 
 
     [Header("=== Настройки ИК препятствий ===")]
-    [Tooltip("Дальность ИК датчиков препятствий (15 см = 0.15f)")]
-    public float irObstacleDistance = 0.15f;
+    [Tooltip("Дальность центрального ИК датчика (метров)")]
+    public float centerIRDistance = 0.15f;
+    [Tooltip("Дальность левого ИК датчика (метров)")]
+    public float leftIRDistance = 0.15f;
+    [Tooltip("Дальность правого ИК датчика (метров)")]
+    public float rightIRDistance = 0.15f;
 
     [Header("=== Настройки ИК клешни ===")]
-    [Tooltip("Дальность ИК датчика внутри клешни (7-8 см = 0.08f)")]
     public float irGripperDistance = 0.08f;
 
-    [Header("=== Выходные данные (Для чтения другими скриптами) ===")]
+    [Header("=== Выходные данные (Для чтения ROS) ===")]
     [Range(0f, 1f)] public float ultrasoundValue = 1f; 
     public int centerIRObstacle = 0;  
     public int leftIRObstacle = 0;    
@@ -67,7 +65,6 @@ public class VirtualSensors : MonoBehaviour
             
             foreach (var hit in hits)
             {
-                // КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: Игнорируем и мяч, и куб
                 if (hit.collider.CompareTag(ballTag) || hit.collider.CompareTag(cubeTag)) 
                     continue; 
 
@@ -130,8 +127,8 @@ public class VirtualSensors : MonoBehaviour
 
     private void UpdateObstacleIR()
     {
-        centerIRObstacle = CheckSingleIR(centerIRPoint, irObstacleDistance, Color.orange) ? 1 : 0;
-        leftIRObstacle = CheckSingleIR(leftIRPoint, irObstacleDistance, Color.orange) ? 1 : 0;
-        rightIRObstacle = CheckSingleIR(rightIRPoint, irObstacleDistance, Color.orange) ? 1 : 0;
+        centerIRObstacle = CheckSingleIR(centerIRPoint, centerIRDistance, Color.orange) ? 1 : 0;
+        leftIRObstacle = CheckSingleIR(leftIRPoint, leftIRDistance, Color.orange) ? 1 : 0;
+        rightIRObstacle = CheckSingleIR(rightIRPoint, rightIRDistance, Color.orange) ? 1 : 0;
     }
 }
